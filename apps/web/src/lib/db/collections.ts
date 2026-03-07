@@ -3,6 +3,7 @@
  * Defines the reactive collections that drive the frontend state
  */
 
+import "../runtime/ensure-crypto-random-uuid";
 import { createCollection } from "@tanstack/db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
