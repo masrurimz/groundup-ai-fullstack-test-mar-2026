@@ -1,43 +1,58 @@
 /**
- * Alerts API - use shared HTTP boundary for all calls
- * Endpoints aligned with backend /api/v1/alerts routes
+ * Alerts API adapter using generated OpenAPI SDK.
+ * Uses generated OpenAPI types as the source of truth.
  */
 
-import { apiGet, apiPost } from "./http";
+import {
+  getAlertApiV1AlertsAlertIdGet,
+  listAlertsApiV1AlertsGet,
+  updateAlertApiV1AlertsAlertIdPatch,
+  type AlertResponse,
+  type AlertUpdateRequest,
+} from "../api-client";
 
-export interface Alert {
-  id: string;
-  title: string;
-  description: string;
-  severity: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+import { getApiClient } from "./client";
 
-export interface CreateAlertRequest {
-  title: string;
-  description: string;
-  severity: string;
+export type Alert = AlertResponse;
+
+export interface AlertsQuery {
+  machine?: string;
+  anomaly?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 /**
- * Fetch all alerts from backend
+ * Fetch all alerts from backend.
  */
-export async function fetchAlerts(): Promise<Alert[]> {
-  return apiGet<Alert[]>("/alerts");
+export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
+  const data = await listAlertsApiV1AlertsGet({
+    client: getApiClient(),
+    query,
+  });
+
+  return data ?? [];
 }
 
 /**
- * Fetch a single alert by ID
+ * Fetch a single alert by ID.
  */
 export async function fetchAlert(id: string): Promise<Alert> {
-  return apiGet<Alert>(`/alerts/${id}`);
+  const alertId = Number(id);
+  return getAlertApiV1AlertsAlertIdGet({
+    client: getApiClient(),
+    path: { alert_id: alertId },
+  });
 }
 
 /**
- * Create a new alert
+ * Update mutable alert fields.
  */
-export async function createAlert(data: CreateAlertRequest): Promise<Alert> {
-  return apiPost<Alert>("/alerts", data);
+export async function updateAlert(id: string, payload: AlertUpdateRequest): Promise<Alert> {
+  const alertId = Number(id);
+  return updateAlertApiV1AlertsAlertIdPatch({
+    client: getApiClient(),
+    path: { alert_id: alertId },
+    body: payload,
+  });
 }
