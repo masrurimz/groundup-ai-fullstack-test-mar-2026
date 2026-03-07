@@ -1,26 +1,28 @@
 /**
- * Lookup API - use shared HTTP boundary for all calls
- * Endpoints aligned with backend /api/v1/lookup routes
+ * Lookup API adapter using generated OpenAPI SDK.
  */
 
-import { apiGet } from "./http";
+import { getLookupItemsApiV1LookupGet, type LookupItem } from "../api-client";
 
-export interface LookupItem {
-  id: string;
-  name: string;
-  category: string;
-}
+import { getApiClient } from "./client";
 
 /**
- * Fetch all lookup items
+ * Fetch all lookup items.
  */
 export async function fetchLookupItems(): Promise<LookupItem[]> {
-  return apiGet<LookupItem[]>("/lookup");
+  const data = await getLookupItemsApiV1LookupGet({ client: getApiClient() });
+  return data ?? [];
 }
 
 /**
- * Fetch lookup items by category
+ * Fetch lookup items by category.
  */
 export async function fetchLookupByCategory(category: string): Promise<LookupItem[]> {
-  return apiGet<LookupItem[]>(`/lookup?category=${encodeURIComponent(category)}`);
+  const data = await getLookupItemsApiV1LookupGet({
+    client: getApiClient(),
+    query: { category },
+  });
+  return data ?? [];
 }
+
+export type { LookupItem };

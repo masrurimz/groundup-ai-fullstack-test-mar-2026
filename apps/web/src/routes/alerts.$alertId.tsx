@@ -28,12 +28,12 @@ function AlertDetailPage() {
   const { alertId } = Route.useParams();
 
   const { data: liveAlerts } = useAlertsOrdered();
-  const { data: selectedAlerts } = useAlert(alertId);
+  const { data: selectedAlertFromLiveQuery } = useAlert(alertId);
 
   const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
   const selectedAlert = useMemo(
-    () => selectedAlerts?.[0] ?? alerts.find((alert) => alert.id === alertId),
-    [selectedAlerts, alerts, alertId],
+    () => selectedAlertFromLiveQuery ?? alerts.find((alert) => alert.id === alertId),
+    [selectedAlertFromLiveQuery, alerts, alertId],
   );
 
   const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
