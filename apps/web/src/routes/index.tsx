@@ -3,7 +3,7 @@ import { useMemo } from "react";
 
 import { StatsCard, MachineBreakdownChart, RecentAlertsTable } from "../components/dashboard";
 import { AlertCircle, Zap, Activity, TrendingUp } from "lucide-react";
-import { useAlertsOrdered } from "../lib/db";
+import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -12,9 +12,8 @@ export const Route = createFileRoute("/")({
 
 function DashboardComponent() {
   const navigate = useNavigate();
-  const { data: liveAlerts, isLoading } = useAlertsOrdered();
+  const { alerts, isLoading } = useAlertsApi();
 
-  const alerts = liveAlerts ?? [];
   const loading = isLoading;
 
   const machineStats = useMemo(() => {
@@ -150,7 +149,7 @@ function DashboardComponent() {
           </p>
           <ul className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
             <li>• Machine stats: Derived from live alert telemetry grouped by machine</li>
-            <li>• Alerts list: Driven by TanStack DB reactive query hooks</li>
+            <li>• Alerts list: Driven by API-backed alert query hooks</li>
             <li>• Alerts navigation: Clicking a row opens the detail workspace route</li>
           </ul>
         </div>
