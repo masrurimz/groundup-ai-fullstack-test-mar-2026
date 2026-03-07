@@ -20,10 +20,16 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4 text-muted-foreground">
-        <button className="rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground">
+        <button
+          aria-label="Open settings"
+          className="rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
           <Settings className="h-5 w-5" />
         </button>
-        <button className="relative rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground">
+        <button
+          aria-label="View notifications"
+          className="relative rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
           <Bell className="h-5 w-5" />
           <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
             3

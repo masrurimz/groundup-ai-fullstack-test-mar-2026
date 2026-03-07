@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
 import { StatsCard, MachineBreakdownChart, RecentAlertsTable } from "../components/dashboard";
-import { fetchAlerts, type Alert } from "../lib/api";
 import {
   createMockMachineStats,
   createMockAlerts,
   computeDashboardStats,
 } from "../lib/dashboard-mocks";
 import { AlertCircle, Zap, Activity, TrendingUp } from "lucide-react";
+import { useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/")({
   component: DashboardComponent,
@@ -15,29 +14,10 @@ export const Route = createFileRoute("/")({
 
 function DashboardComponent() {
   const navigate = useNavigate();
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: liveAlerts, isLoading } = useAlertsOrdered();
 
-  // Load alerts on mount (use real data if available, fall back to mocks)
-  useEffect(() => {
-    const loadAlerts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchAlerts();
-        setAlerts(data);
-      } catch (err) {
-        // Fallback to mock data if API fails
-        console.warn("Failed to fetch alerts, using mock data:", err);
-        setAlerts(createMockAlerts());
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAlerts();
-  }, []);
+  const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
+  const loading = isLoading && !liveAlerts;
 
   // Use mock machine stats (TODO: Replace with TanStack DB collection when 7gw is ready)
   const machineStats = createMockMachineStats();
@@ -55,13 +35,6 @@ function DashboardComponent() {
             Real-time system health and alert management
           </p>
         </div>
-
-        {/* Error state */}
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-            <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
-          </div>
-        )}
 
         {/* Key statistics */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -126,15 +99,9 @@ function DashboardComponent() {
             📝 Integration Points:
           </p>
           <ul className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-            <li>
-              • Machine stats: Using typed mocks (awaiting TanStack DB collections from
-              groundup-ai-7gw)
-            </li>
-            <li>• Alert styling: Will respect theme tokens from groundup-ai-di8</li>
-            <li>
-              • Real-time updates: Will use TanStack Query subscriptions once upstream tasks
-              complete
-            </li>
+            <li>• Machine stats: Using typed mocks pending machine collection implementation</li>
+            <li>• Alerts list: Driven by TanStack DB reactive query hooks</li>
+            <li>• Alerts navigation: Clicking a row opens the detail workspace route</li>
           </ul>
         </div>
       </div>
