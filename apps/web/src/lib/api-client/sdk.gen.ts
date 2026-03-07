@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthApiV1HealthGetData, HealthApiV1HealthGetResponses, HealthCompatHealthGetData, HealthCompatHealthGetResponses } from './types.gen';
+import type { GetActionsApiV1LookupActionsGetData, GetActionsApiV1LookupActionsGetResponses, GetAlertApiV1AlertsAlertIdGetData, GetAlertApiV1AlertsAlertIdGetErrors, GetAlertApiV1AlertsAlertIdGetResponses, GetAudioApiV1AlertsAlertIdAudioGetData, GetAudioApiV1AlertsAlertIdAudioGetErrors, GetAudioApiV1AlertsAlertIdAudioGetResponses, GetLookupItemsApiV1LookupGetData, GetLookupItemsApiV1LookupGetErrors, GetLookupItemsApiV1LookupGetResponses, GetReasonsApiV1LookupReasonsGetData, GetReasonsApiV1LookupReasonsGetErrors, GetReasonsApiV1LookupReasonsGetResponses, GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData, GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors, GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses, GetWaveformApiV1AlertsAlertIdWaveformGetData, GetWaveformApiV1AlertsAlertIdWaveformGetErrors, GetWaveformApiV1AlertsAlertIdWaveformGetResponses, HealthApiV1HealthGetData, HealthApiV1HealthGetResponses, HealthCompatHealthGetData, HealthCompatHealthGetResponses, ListAlertsApiV1AlertsGetData, ListAlertsApiV1AlertsGetErrors, ListAlertsApiV1AlertsGetResponses, UpdateAlertApiV1AlertsAlertIdPatchData, UpdateAlertApiV1AlertsAlertIdPatchErrors, UpdateAlertApiV1AlertsAlertIdPatchResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -17,6 +17,58 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+/**
+ * List Alerts
+ */
+export const listAlertsApiV1AlertsGet = <ThrowOnError extends boolean = false>(options?: Options<ListAlertsApiV1AlertsGetData, ThrowOnError>) => (options?.client ?? client).get<ListAlertsApiV1AlertsGetResponses, ListAlertsApiV1AlertsGetErrors, ThrowOnError>({ url: '/api/v1/alerts', ...options });
+
+/**
+ * Get Alert
+ */
+export const getAlertApiV1AlertsAlertIdGet = <ThrowOnError extends boolean = false>(options: Options<GetAlertApiV1AlertsAlertIdGetData, ThrowOnError>) => (options.client ?? client).get<GetAlertApiV1AlertsAlertIdGetResponses, GetAlertApiV1AlertsAlertIdGetErrors, ThrowOnError>({ url: '/api/v1/alerts/{alert_id}', ...options });
+
+/**
+ * Update Alert
+ */
+export const updateAlertApiV1AlertsAlertIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateAlertApiV1AlertsAlertIdPatchData, ThrowOnError>) => (options.client ?? client).patch<UpdateAlertApiV1AlertsAlertIdPatchResponses, UpdateAlertApiV1AlertsAlertIdPatchErrors, ThrowOnError>({
+    url: '/api/v1/alerts/{alert_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Audio
+ */
+export const getAudioApiV1AlertsAlertIdAudioGet = <ThrowOnError extends boolean = false>(options: Options<GetAudioApiV1AlertsAlertIdAudioGetData, ThrowOnError>) => (options.client ?? client).get<GetAudioApiV1AlertsAlertIdAudioGetResponses, GetAudioApiV1AlertsAlertIdAudioGetErrors, ThrowOnError>({ url: '/api/v1/alerts/{alert_id}/audio', ...options });
+
+/**
+ * Get Waveform
+ */
+export const getWaveformApiV1AlertsAlertIdWaveformGet = <ThrowOnError extends boolean = false>(options: Options<GetWaveformApiV1AlertsAlertIdWaveformGetData, ThrowOnError>) => (options.client ?? client).get<GetWaveformApiV1AlertsAlertIdWaveformGetResponses, GetWaveformApiV1AlertsAlertIdWaveformGetErrors, ThrowOnError>({ url: '/api/v1/alerts/{alert_id}/waveform', ...options });
+
+/**
+ * Get Spectrogram
+ */
+export const getSpectrogramApiV1AlertsAlertIdSpectrogramGet = <ThrowOnError extends boolean = false>(options: Options<GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData, ThrowOnError>) => (options.client ?? client).get<GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses, GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors, ThrowOnError>({ url: '/api/v1/alerts/{alert_id}/spectrogram', ...options });
+
+/**
+ * Get Lookup Items
+ */
+export const getLookupItemsApiV1LookupGet = <ThrowOnError extends boolean = false>(options?: Options<GetLookupItemsApiV1LookupGetData, ThrowOnError>) => (options?.client ?? client).get<GetLookupItemsApiV1LookupGetResponses, GetLookupItemsApiV1LookupGetErrors, ThrowOnError>({ url: '/api/v1/lookup', ...options });
+
+/**
+ * Get Reasons
+ */
+export const getReasonsApiV1LookupReasonsGet = <ThrowOnError extends boolean = false>(options?: Options<GetReasonsApiV1LookupReasonsGetData, ThrowOnError>) => (options?.client ?? client).get<GetReasonsApiV1LookupReasonsGetResponses, GetReasonsApiV1LookupReasonsGetErrors, ThrowOnError>({ url: '/api/v1/lookup/reasons', ...options });
+
+/**
+ * Get Actions
+ */
+export const getActionsApiV1LookupActionsGet = <ThrowOnError extends boolean = false>(options?: Options<GetActionsApiV1LookupActionsGetData, ThrowOnError>) => (options?.client ?? client).get<GetActionsApiV1LookupActionsGetResponses, unknown, ThrowOnError>({ url: '/api/v1/lookup/actions', ...options });
 
 /**
  * Health
