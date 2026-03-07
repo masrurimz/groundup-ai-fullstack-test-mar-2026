@@ -8,97 +8,123 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as AlertsIndexRouteImport } from "./routes/alerts.index";
-import { Route as AlertsAlertIdRouteImport } from "./routes/alerts.$alertId";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
+import { Route as AlertsAlertIdRouteImport } from './routes/alerts.$alertId'
 
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AlertsIndexRoute = AlertsIndexRouteImport.update({
-  id: "/alerts/",
-  path: "/alerts/",
-  getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => AlertsRoute,
+} as any)
 const AlertsAlertIdRoute = AlertsAlertIdRouteImport.update({
-  id: "/alerts/$alertId",
-  path: "/alerts/$alertId",
-  getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/$alertId',
+  path: '/$alertId',
+  getParentRoute: () => AlertsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/alerts/$alertId": typeof AlertsAlertIdRoute;
-  "/alerts/": typeof AlertsIndexRoute;
+  '/': typeof IndexRoute
+  '/alerts': typeof AlertsRouteWithChildren
+  '/alerts/$alertId': typeof AlertsAlertIdRoute
+  '/alerts/': typeof AlertsIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/alerts/$alertId": typeof AlertsAlertIdRoute;
-  "/alerts": typeof AlertsIndexRoute;
+  '/': typeof IndexRoute
+  '/alerts/$alertId': typeof AlertsAlertIdRoute
+  '/alerts': typeof AlertsIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/alerts/$alertId": typeof AlertsAlertIdRoute;
-  "/alerts/": typeof AlertsIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/alerts': typeof AlertsRouteWithChildren
+  '/alerts/$alertId': typeof AlertsAlertIdRoute
+  '/alerts/': typeof AlertsIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/alerts/$alertId" | "/alerts/";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/alerts/$alertId" | "/alerts";
-  id: "__root__" | "/" | "/alerts/$alertId" | "/alerts/";
-  fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/alerts' | '/alerts/$alertId' | '/alerts/'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/alerts/$alertId' | '/alerts'
+  id: '__root__' | '/' | '/alerts' | '/alerts/$alertId' | '/alerts/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AlertsAlertIdRoute: typeof AlertsAlertIdRoute;
-  AlertsIndexRoute: typeof AlertsIndexRoute;
+  IndexRoute: typeof IndexRoute
+  AlertsRoute: typeof AlertsRouteWithChildren
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/alerts/": {
-      id: "/alerts/";
-      path: "/alerts";
-      fullPath: "/alerts/";
-      preLoaderRoute: typeof AlertsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/alerts/$alertId": {
-      id: "/alerts/$alertId";
-      path: "/alerts/$alertId";
-      fullPath: "/alerts/$alertId";
-      preLoaderRoute: typeof AlertsAlertIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts/': {
+      id: '/alerts/'
+      path: '/'
+      fullPath: '/alerts/'
+      preLoaderRoute: typeof AlertsIndexRouteImport
+      parentRoute: typeof AlertsRoute
+    }
+    '/alerts/$alertId': {
+      id: '/alerts/$alertId'
+      path: '/$alertId'
+      fullPath: '/alerts/$alertId'
+      preLoaderRoute: typeof AlertsAlertIdRouteImport
+      parentRoute: typeof AlertsRoute
+    }
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+interface AlertsRouteChildren {
+  AlertsAlertIdRoute: typeof AlertsAlertIdRoute
+  AlertsIndexRoute: typeof AlertsIndexRoute
+}
+
+const AlertsRouteChildren: AlertsRouteChildren = {
   AlertsAlertIdRoute: AlertsAlertIdRoute,
   AlertsIndexRoute: AlertsIndexRoute,
-};
+}
+
+const AlertsRouteWithChildren =
+  AlertsRoute._addFileChildren(AlertsRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AlertsRoute: AlertsRouteWithChildren,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }
