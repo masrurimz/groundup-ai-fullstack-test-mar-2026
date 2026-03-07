@@ -1,0 +1,12 @@
+{
+  "name": "server",
+  "private": true,
+  "scripts": {
+    "dev": "uv run fastapi dev app/main.py --port 8000",
+    "build": "echo 'no build step for python'",
+    "lint": "uv run ruff check .",
+    "check-types": "uv run ty check",
+    "format": "uv run ruff format .",
+    "test": "uv run pytest"
+  }
+}
