@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as IndexRouteImport } from "./routes/index";
+import { Route as AlertsIndexRouteImport } from "./routes/alerts.index";
 import { Route as AlertsAlertIdRouteImport } from "./routes/alerts.$alertId";
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const AlertsIndexRoute = AlertsIndexRouteImport.update({
+  id: "/alerts/",
+  path: "/alerts/",
   getParentRoute: () => rootRouteImport,
 } as any);
 const AlertsAlertIdRoute = AlertsAlertIdRouteImport.update({
@@ -26,27 +32,31 @@ const AlertsAlertIdRoute = AlertsAlertIdRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/alerts/": typeof AlertsIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/alerts": typeof AlertsIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/alerts/": typeof AlertsIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/alerts/$alertId";
+  fullPaths: "/" | "/alerts/$alertId" | "/alerts/";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/alerts/$alertId";
-  id: "__root__" | "/" | "/alerts/$alertId";
+  to: "/" | "/alerts/$alertId" | "/alerts";
+  id: "__root__" | "/" | "/alerts/$alertId" | "/alerts/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AlertsAlertIdRoute: typeof AlertsAlertIdRoute;
+  AlertsIndexRoute: typeof AlertsIndexRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -56,6 +66,13 @@ declare module "@tanstack/react-router" {
       path: "/";
       fullPath: "/";
       preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/alerts/": {
+      id: "/alerts/";
+      path: "/alerts";
+      fullPath: "/alerts/";
+      preLoaderRoute: typeof AlertsIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/alerts/$alertId": {
@@ -71,6 +88,7 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsAlertIdRoute: AlertsAlertIdRoute,
+  AlertsIndexRoute: AlertsIndexRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

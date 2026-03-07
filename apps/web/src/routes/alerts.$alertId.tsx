@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronDown, PlayCircle, Volume2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { fetchAlerts, type Alert } from "../lib/api";
 import { createMockAlerts } from "../lib/dashboard-mocks";
+import { useAlert, useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/alerts/$alertId")({
   component: AlertDetailPage,
@@ -12,25 +12,18 @@ export const Route = createFileRoute("/alerts/$alertId")({
 function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const { data: liveAlerts } = useAlertsOrdered();
+  const { data: selectedAlerts } = useAlert(alertId);
+  const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
 
-  useEffect(() => {
-    const loadAlerts = async () => {
-      try {
-        const data = await fetchAlerts();
-        setAlerts(data.length > 0 ? data : createMockAlerts());
-      } catch {
-        setAlerts(createMockAlerts());
-      }
-    };
-
-    void loadAlerts();
-  }, []);
+  const selectedFromLiveQuery = selectedAlerts?.[0];
 
   const selectedAlert = useMemo(
-    () => alerts.find((alert) => alert.id === alertId) ?? alerts[0],
-    [alerts, alertId],
+    () => selectedFromLiveQuery ?? alerts.find((alert) => alert.id === alertId),
+    [selectedFromLiveQuery, alerts, alertId],
   );
+
+  const selectedAlertId = selectedAlert?.id;
 
   const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
 
@@ -65,7 +58,7 @@ function AlertDetailPage() {
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
           {alerts.map((alert) => {
-            const active = alert.id === selectedAlert?.id;
+            const active = alert.id === selectedAlertId;
             return (
               <button
                 key={alert.id}
@@ -105,7 +98,20 @@ function AlertDetailPage() {
       </aside>
 
       <section className="min-h-0 overflow-y-auto bg-white p-8 dark:bg-slate-950">
-        {!selectedAlert ? null : (
+        {!selectedAlert ? (
+          <div className="mx-auto max-w-2xl rounded-lg border border-border bg-card p-6 text-center">
+            <h2 className="text-xl font-semibold text-foreground">Alert Not Found</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The selected alert ID does not exist in the current alert dataset.
+            </p>
+            <button
+              onClick={() => navigate({ to: "/alerts" })}
+              className="mt-6 rounded bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
+            >
+              Back To Alerts
+            </button>
+          </div>
+        ) : (
           <div className="mx-auto max-w-6xl pb-10">
             <h1 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">
               Alert ID {selectedAlert.id}
