@@ -5,6 +5,7 @@
 
 import { createCollection } from "@tanstack/db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
+
 import { fetchAlerts, type Alert } from "../api/alerts";
 import { getQueryClient } from "../query/client";
 
@@ -15,7 +16,7 @@ import { getQueryClient } from "../query/client";
 export const alertsCollection = createCollection(
   queryCollectionOptions<Alert>({
     queryKey: ["alerts"],
-    queryFn: fetchAlerts,
+    queryFn: () => fetchAlerts(),
     queryClient: getQueryClient(),
     getKey: (item) => item.id,
   }),

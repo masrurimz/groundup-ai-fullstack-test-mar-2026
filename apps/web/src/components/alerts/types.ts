@@ -1,3 +1,3 @@
-import type { Alert } from "@/lib/api";
+import type { AlertView } from "@/lib/db/queries";
 
-export type AlertItem = Alert;
+export type AlertItem = AlertView;

@@ -16,7 +16,6 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-import { createMockAlerts } from "../lib/dashboard-mocks";
 import { useAlert, useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/alerts/$alertId")({
@@ -30,11 +29,14 @@ function AlertDetailPage() {
   const { data: liveAlerts } = useAlertsOrdered();
   const { data: selectedAlertFromLiveQuery } = useAlert(alertId);
 
-  const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
-  const selectedAlert = useMemo(
-    () => selectedAlertFromLiveQuery ?? alerts.find((alert) => alert.id === alertId),
-    [selectedAlertFromLiveQuery, alerts, alertId],
-  );
+  const alerts = liveAlerts ?? [];
+  const selectedAlert = useMemo(() => {
+    const liveQueryResult = Array.isArray(selectedAlertFromLiveQuery)
+      ? selectedAlertFromLiveQuery[0]
+      : selectedAlertFromLiveQuery;
+
+    return liveQueryResult ?? alerts.find((alert) => alert.id === alertId);
+  }, [selectedAlertFromLiveQuery, alerts, alertId]);
 
   const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
 

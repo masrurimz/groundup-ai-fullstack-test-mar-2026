@@ -3,7 +3,6 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { createMockAlerts } from "../lib/dashboard-mocks";
 import { useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/alerts/")({
@@ -12,9 +11,8 @@ export const Route = createFileRoute("/alerts/")({
 
 function AlertsIndexPage() {
   const navigate = useNavigate();
-  const { data: liveAlerts } = useAlertsOrdered();
-
-  const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
+  const { data: liveAlerts, isLoading } = useAlertsOrdered();
+  const alerts = liveAlerts ?? [];
   const firstAlert = alerts[0];
 
   useEffect(() => {
@@ -27,7 +25,7 @@ function AlertsIndexPage() {
     }
   }, [firstAlert, navigate]);
 
-  if (firstAlert) {
+  if (isLoading || firstAlert) {
     return (
       <main className="grid h-full place-items-center bg-background">
         <p className="text-sm text-muted-foreground">Loading alerts workspace...</p>

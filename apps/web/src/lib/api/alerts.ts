@@ -22,16 +22,24 @@ export interface AlertsQuery {
   end_date?: string;
 }
 
+function unwrapResponse<T>(result: unknown): T | undefined {
+  if (result && typeof result === "object" && !Array.isArray(result) && "data" in result) {
+    return (result as { data?: T }).data;
+  }
+
+  return result as T;
+}
+
 /**
  * Fetch all alerts from backend.
  */
 export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
-  const data = await listAlertsApiV1AlertsGet({
+  const result = await listAlertsApiV1AlertsGet({
     client: getApiClient(),
     query,
   });
 
-  return data ?? [];
+  return unwrapResponse<Alert[]>(result) ?? [];
 }
 
 /**
@@ -39,10 +47,17 @@ export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
  */
 export async function fetchAlert(id: string): Promise<Alert> {
   const alertId = Number(id);
-  return getAlertApiV1AlertsAlertIdGet({
+  const result = await getAlertApiV1AlertsAlertIdGet({
     client: getApiClient(),
     path: { alert_id: alertId },
   });
+
+  const alert = unwrapResponse<Alert>(result);
+  if (!alert) {
+    throw new Error(`Alert ${id} not found`);
+  }
+
+  return alert;
 }
 
 /**
@@ -50,9 +65,16 @@ export async function fetchAlert(id: string): Promise<Alert> {
  */
 export async function updateAlert(id: string, payload: AlertUpdateRequest): Promise<Alert> {
   const alertId = Number(id);
-  return updateAlertApiV1AlertsAlertIdPatch({
+  const result = await updateAlertApiV1AlertsAlertIdPatch({
     client: getApiClient(),
     path: { alert_id: alertId },
     body: payload,
   });
+
+  const alert = unwrapResponse<Alert>(result);
+  if (!alert) {
+    throw new Error(`Alert ${id} update returned no payload`);
+  }
+
+  return alert;
 }
