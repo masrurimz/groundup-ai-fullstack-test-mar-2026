@@ -10,7 +10,7 @@ export const Route = createFileRoute("/alerts")({
 
 function AlertsLayout() {
   const navigate = useNavigate();
-  const { alerts, isLoading } = useAlertsApi();
+  const { alerts } = useAlertsApi();
   const params = useParams({ strict: false });
   const alertId = (params as { alertId?: string }).alertId;
 
