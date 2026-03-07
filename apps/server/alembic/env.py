@@ -1,15 +1,16 @@
 import asyncio
 import os
+
+# Add app directory to path for model imports
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-# Add app directory to path for model imports
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.models import Base
@@ -27,7 +28,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
-    
+
     This configures the context with just a URL and not an Engine.
     Calls to context.execute() here emit the given string to the script output.
     """
@@ -60,11 +61,11 @@ async def run_migrations_online() -> None:
     """Run migrations in 'online' mode (async)."""
     # Get database URL from config
     url = config.get_main_option("sqlalchemy.url")
-    
+
     # Create async engine
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = url
-    
+
     connectable = create_async_engine(
         url,
         poolclass=pool.NullPool,

@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "generate-routes": "bunx tsr generate",
+    "generate-client": "openapi-ts -f openapi-ts.config.ts",
     "build": "vite build",
     "serve": "vite preview",
     "dev:bare": "vite dev"
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.17.1",
     "@groundup-ai-fullstack-test-mar-2026/config": "workspace:*",
+    "@hey-api/openapi-ts": "^0.94.0",
     "@tanstack/react-router-devtools": "^1.141.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",

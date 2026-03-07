@@ -18,6 +18,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "generate-client": "bash scripts/generate-client.sh",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "deploy": "turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
