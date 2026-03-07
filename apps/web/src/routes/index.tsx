@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { StatsCard, MachineBreakdownChart, RecentAlertsTable } from "../components/dashboard";
 import { fetchAlerts, type Alert } from "../lib/api";
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardComponent() {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,8 +114,7 @@ function DashboardComponent() {
               alerts={alerts}
               isLoading={loading}
               onAlertClick={(id) => {
-                console.log("Alert clicked:", id);
-                // TODO: Navigate to alert detail page when routing is added
+                void navigate({ to: "/alerts/$alertId", params: { alertId: id } });
               }}
             />
           </div>
