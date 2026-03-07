@@ -39,7 +39,7 @@ function AlertDetailPage() {
   const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
 
   return (
-    <main className="grid h-full min-h-0 grid-cols-[320px_1fr] overflow-hidden bg-background">
+    <main className="grid h-full min-h-0 grid-cols-1 overflow-hidden bg-background lg:grid-cols-[320px_1fr]">
       <AlertsSidebar
         alerts={alerts}
         selectedAlertId={selectedAlert?.id}
@@ -48,7 +48,7 @@ function AlertDetailPage() {
         onSelectAlert={(id) => navigate({ to: "/alerts/$alertId", params: { alertId: id } })}
       />
 
-      <section className="min-h-0 overflow-y-auto bg-card p-8">
+      <section className="min-h-0 overflow-y-auto bg-card p-5 lg:p-8">
         {!selectedAlert ? (
           <Card className="mx-auto max-w-2xl text-center">
             <CardHeader>
