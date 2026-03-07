@@ -23,10 +23,11 @@ export function AlertsSidebar({
   onSelectAlert,
 }: AlertsSidebarProps) {
   return (
-    <aside className="flex min-h-0 flex-col border-r border-border bg-card">
+    <aside className="flex max-h-[45vh] min-h-0 flex-col border-b border-border bg-card lg:max-h-none lg:border-r lg:border-b-0">
       <div className="p-4">
         <Button
           variant="outline"
+          aria-label="Select machine filter"
           className="w-full justify-between rounded-md px-3 py-2 text-sm text-foreground"
         >
           <span>{machineLabel}</span>
