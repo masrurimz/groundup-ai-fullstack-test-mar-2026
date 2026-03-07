@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate-routes": "bunx tsr generate",
+    "generate-routes": "bunx @tanstack/router-cli generate",
     "generate-client": "openapi-ts -f openapi-ts.config.ts",
     "build": "vite build",
     "serve": "vite preview",
