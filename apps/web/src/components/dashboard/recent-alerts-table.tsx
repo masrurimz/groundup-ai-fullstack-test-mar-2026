@@ -8,10 +8,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { type Alert } from "../../lib/api";
+import type { AlertView } from "../../lib/db/queries";
 
 export interface RecentAlertsTableProps {
-  alerts: Alert[];
+  alerts: AlertView[];
   isLoading?: boolean;
   onAlertClick?: (alertId: string) => void;
 }
