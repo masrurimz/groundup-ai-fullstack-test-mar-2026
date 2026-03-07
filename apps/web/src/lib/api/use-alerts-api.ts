@@ -3,6 +3,26 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchAlerts } from "./alerts";
 import { toAlertViews, type AlertView } from "./alert-view";
 
+const ALERTS_REQUEST_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Alerts request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error: unknown) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
+
 type UseAlertsApiResult = {
   alerts: AlertView[];
   isLoading: boolean;
@@ -20,7 +40,7 @@ export function useAlertsApi(): UseAlertsApiResult {
     setError(null);
 
     try {
-      const apiAlerts = await fetchAlerts();
+      const apiAlerts = await withTimeout(fetchAlerts(), ALERTS_REQUEST_TIMEOUT_MS);
       setAlerts(toAlertViews(apiAlerts));
     } catch (unknownError) {
       setAlerts([]);

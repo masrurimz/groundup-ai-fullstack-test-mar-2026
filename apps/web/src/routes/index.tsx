@@ -6,13 +6,12 @@ import { AlertCircle, Zap, Activity, TrendingUp } from "lucide-react";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/")({
-  ssr: false,
   component: DashboardComponent,
 });
 
 function DashboardComponent() {
   const navigate = useNavigate();
-  const { alerts, isLoading } = useAlertsApi();
+  const { alerts, isLoading, error } = useAlertsApi();
 
   const loading = isLoading;
 
@@ -83,6 +82,11 @@ function DashboardComponent() {
           <p className="mt-2 text-slate-600 dark:text-slate-400">
             Real-time system health and alert management
           </p>
+          {error ? (
+            <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+              Unable to load alerts from API. Showing empty state.
+            </p>
+          ) : null}
         </div>
 
         {/* Key statistics */}
