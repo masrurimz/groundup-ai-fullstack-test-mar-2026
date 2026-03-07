@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useAlert, useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/alerts/$alertId")({
+  ssr: false,
   component: AlertDetailPage,
 });
 

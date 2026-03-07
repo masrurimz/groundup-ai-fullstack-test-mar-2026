@@ -6,6 +6,7 @@ import { AlertCircle, Zap, Activity, TrendingUp } from "lucide-react";
 import { useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   component: DashboardComponent,
 });
 
