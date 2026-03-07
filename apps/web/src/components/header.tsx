@@ -1,45 +1,47 @@
-import { Link } from "@tanstack/react-router";
-import { Bell, Settings, UserCircle2 } from "lucide-react";
+import { Link, useMatchRoute } from "@tanstack/react-router";
+import { Bell, Settings, User } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function Header() {
-  const navLinkClass = "border-b-2 border-transparent py-5 transition-colors hover:text-foreground";
-  const activeNavClass = "border-primary text-primary";
+  const matchRoute = useMatchRoute();
+
+  const navLinkClass = (to: string) =>
+    cn(
+      "h-full flex items-center px-1 border-b-4 border-transparent text-sm font-medium text-muted-foreground transition-colors hover:text-foreground uppercase tracking-wide",
+      matchRoute({ to, fuzzy: true }) && "border-primary text-primary",
+    );
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <div className="flex items-center gap-12">
-        <p className="text-xl font-bold tracking-tight text-foreground">GROUNDUP.AI</p>
-        <nav className="flex h-full items-center gap-6 text-sm font-semibold text-muted-foreground">
-          <Link to="/" className={navLinkClass} activeProps={{ className: activeNavClass }}>
+      <div className="flex h-full items-center gap-12">
+        <p className="text-xl font-bold tracking-tighter text-foreground">GROUNDUP.AI</p>
+        <nav className="flex h-full items-center gap-8">
+          <Link to="/" className={navLinkClass("/")}>
             Dashboard
           </Link>
-          <Link to="/alerts" className={navLinkClass} activeProps={{ className: activeNavClass }}>
+          <Link to="/alerts" className={navLinkClass("/alerts")}>
             Alerts
           </Link>
         </nav>
       </div>
 
       <div className="flex items-center gap-4 text-muted-foreground">
-        <button
-          aria-label="Open settings"
-          className="rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground"
-        >
+        <Button variant="ghost" size="icon" aria-label="Open settings">
           <Settings className="h-5 w-5" />
-        </button>
-        <button
-          aria-label="View notifications"
-          className="relative rounded-md p-1.5 transition-colors hover:bg-muted hover:text-foreground"
-        >
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="View profile">
+          <User className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="View notifications" className="relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border-2 border-card bg-primary text-[10px] font-bold text-primary-foreground">
             3
           </span>
-        </button>
-        <div className="h-7 w-px bg-border" />
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <UserCircle2 className="h-5 w-5" />
-          <span>Welcome Admin</span>
-        </div>
+        </Button>
+        <div className="h-8 w-px bg-border" />
+        <span className="text-sm font-medium text-foreground">Welcome Admin!</span>
       </div>
     </header>
   );

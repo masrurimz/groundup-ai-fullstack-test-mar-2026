@@ -26,14 +26,14 @@ function AlertsIndexPage() {
 
   if (isLoading || firstAlert) {
     return (
-      <main className="grid h-full place-items-center bg-background">
+      <section className="grid h-full place-items-center bg-card">
         <p className="text-sm text-muted-foreground">Loading alerts workspace...</p>
-      </main>
+      </section>
     );
   }
 
   return (
-    <main className="grid h-full place-items-center bg-background px-6">
+    <section className="grid h-full place-items-center bg-card px-6">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold text-foreground">No Alerts Available</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -48,6 +48,6 @@ function AlertsIndexPage() {
           <Button onClick={() => void navigate({ to: "/" })}>Back To Dashboard</Button>
         </div>
       </div>
-    </main>
+    </section>
   );
 }
