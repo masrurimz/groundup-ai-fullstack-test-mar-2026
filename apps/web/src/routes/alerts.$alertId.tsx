@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-import { useAlert, useAlertsOrdered } from "../lib/db";
+import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/$alertId")({
   ssr: false,
@@ -26,18 +26,11 @@ export const Route = createFileRoute("/alerts/$alertId")({
 function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
+  const { alerts } = useAlertsApi();
 
-  const { data: liveAlerts } = useAlertsOrdered();
-  const { data: selectedAlertFromLiveQuery } = useAlert(alertId);
-
-  const alerts = liveAlerts ?? [];
   const selectedAlert = useMemo(() => {
-    const liveQueryResult = Array.isArray(selectedAlertFromLiveQuery)
-      ? selectedAlertFromLiveQuery[0]
-      : selectedAlertFromLiveQuery;
-
-    return liveQueryResult ?? alerts.find((alert) => alert.id === alertId);
-  }, [selectedAlertFromLiveQuery, alerts, alertId]);
+    return alerts.find((alert) => alert.id === alertId);
+  }, [alerts, alertId]);
 
   const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
 

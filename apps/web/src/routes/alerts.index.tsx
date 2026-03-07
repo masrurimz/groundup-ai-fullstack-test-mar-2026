@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { useAlertsOrdered } from "../lib/db";
+import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/")({
   ssr: false,
@@ -12,8 +12,7 @@ export const Route = createFileRoute("/alerts/")({
 
 function AlertsIndexPage() {
   const navigate = useNavigate();
-  const { data: liveAlerts, isLoading } = useAlertsOrdered();
-  const alerts = liveAlerts ?? [];
+  const { alerts, isLoading } = useAlertsApi();
   const firstAlert = alerts[0];
 
   useEffect(() => {
