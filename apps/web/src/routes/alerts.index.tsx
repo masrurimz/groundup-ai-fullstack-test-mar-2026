@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAlertsOrdered } from "../lib/db";
 
 export const Route = createFileRoute("/alerts/")({
+  ssr: false,
   component: AlertsIndexPage,
 });
 
