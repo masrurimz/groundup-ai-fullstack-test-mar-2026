@@ -6,6 +6,7 @@
 import { eq, isNull, not, or } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 
+import type { Alert } from "../api/alerts";
 import { alertsCollection } from "./collections";
 
 export type AlertView = {
@@ -25,6 +26,10 @@ export type AlertView = {
   comment: string | null;
 };
 
+type AlertRow = {
+  alert: Alert;
+};
+
 const mapSeverity = (anomalyType: string): string => {
   const normalized = anomalyType.toLowerCase();
   if (normalized === "severe") {
@@ -36,8 +41,8 @@ const mapSeverity = (anomalyType: string): string => {
   return "info";
 };
 
-const toAlertView = ({ alert }: { alert: any }): AlertView => ({
-  id: String(alert.id),
+const toAlertView = ({ alert }: AlertRow): AlertView => ({
+  id: `${alert.id}`,
   title: `${alert.machine} ${alert.anomaly_type}`,
   description: `${alert.machine} sensor ${alert.sensor}`,
   severity: mapSeverity(alert.anomaly_type),
@@ -58,7 +63,7 @@ export function useAlerts() {
     q
       .from({ alert: alertsCollection })
       .orderBy(({ alert }) => alert.timestamp, "desc")
-      .select(toAlertView),
+      .fn.select(toAlertView),
   );
 }
 
@@ -72,7 +77,7 @@ export function useAlert(id?: string) {
       return q
         .from({ alert: alertsCollection })
         .where(({ alert }) => eq(alert.id, Number(id)))
-        .select(toAlertView);
+        .fn.select(toAlertView);
     },
     [id],
   );
@@ -86,14 +91,14 @@ export function useAlertsByStatus(status?: AlertView["status"]) {
         .orderBy(({ alert }) => alert.timestamp, "desc");
 
       if (status === "active") {
-        return baseQuery.where(({ alert }) => isNull(alert.action)).select(toAlertView);
+        return baseQuery.where(({ alert }) => isNull(alert.action)).fn.select(toAlertView);
       }
 
       if (status === "acknowledged") {
-        return baseQuery.where(({ alert }) => not(isNull(alert.action))).select(toAlertView);
+        return baseQuery.where(({ alert }) => not(isNull(alert.action))).fn.select(toAlertView);
       }
 
-      return baseQuery.select(toAlertView);
+      return baseQuery.fn.select(toAlertView);
     },
     [status],
   );
@@ -107,13 +112,15 @@ export function useAlertsBySeverity(severity?: AlertView["severity"]) {
         .orderBy(({ alert }) => alert.timestamp, "desc");
 
       if (severity === "critical") {
-        return baseQuery.where(({ alert }) => eq(alert.anomaly_type, "severe")).select(toAlertView);
+        return baseQuery
+          .where(({ alert }) => eq(alert.anomaly_type, "severe"))
+          .fn.select(toAlertView);
       }
 
       if (severity === "warning") {
         return baseQuery
           .where(({ alert }) => eq(alert.anomaly_type, "moderate"))
-          .select(toAlertView);
+          .fn.select(toAlertView);
       }
 
       if (severity === "info") {
@@ -121,10 +128,10 @@ export function useAlertsBySeverity(severity?: AlertView["severity"]) {
           .where(({ alert }) =>
             not(or(eq(alert.anomaly_type, "severe"), eq(alert.anomaly_type, "moderate"))),
           )
-          .select(toAlertView);
+          .fn.select(toAlertView);
       }
 
-      return baseQuery.select(toAlertView);
+      return baseQuery.fn.select(toAlertView);
     },
     [severity],
   );
@@ -135,6 +142,6 @@ export function useAlertsOrdered() {
     q
       .from({ alert: alertsCollection })
       .orderBy(({ alert }) => alert.timestamp, "desc")
-      .select(toAlertView),
+      .fn.select(toAlertView),
   );
 }
