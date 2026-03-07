@@ -19,6 +19,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "generate-client": "bash scripts/generate-client.sh",
+    "verify-generated-client": "bash scripts/generate-client.sh && git diff --exit-code -- apps/web/src/lib/api-client",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "deploy": "turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
