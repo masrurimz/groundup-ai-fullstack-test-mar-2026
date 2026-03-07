@@ -19,14 +19,13 @@ import { cn } from "@/lib/utils";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/$alertId")({
-  ssr: false,
   component: AlertDetailPage,
 });
 
 function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
-  const { alerts } = useAlertsApi();
+  const { alerts, error } = useAlertsApi();
 
   const selectedAlert = useMemo(() => {
     return alerts.find((alert) => alert.id === alertId);
@@ -54,6 +53,11 @@ function AlertDetailPage() {
               <p className="text-sm text-muted-foreground">
                 The selected alert ID does not exist in the current alert dataset.
               </p>
+              {error ? (
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                  API request failed or timed out.
+                </p>
+              ) : null}
               <Button className="mt-6" onClick={() => navigate({ to: "/alerts" })}>
                 Back To Alerts
               </Button>

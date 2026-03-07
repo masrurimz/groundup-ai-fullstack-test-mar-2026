@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/")({
-  ssr: false,
   component: AlertsIndexPage,
 });
 
 function AlertsIndexPage() {
   const navigate = useNavigate();
-  const { alerts, isLoading } = useAlertsApi();
+  const { alerts, isLoading, error } = useAlertsApi();
   const firstAlert = alerts[0];
 
   useEffect(() => {
@@ -40,6 +39,11 @@ function AlertsIndexPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           Alerts will appear here once data is available from the monitoring pipeline.
         </p>
+        {error ? (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+            API request failed or timed out.
+          </p>
+        ) : null}
         <div className="mt-6">
           <Button onClick={() => void navigate({ to: "/" })}>Back To Dashboard</Button>
         </div>

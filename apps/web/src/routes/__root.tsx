@@ -9,7 +9,6 @@ import appCss from "../index.css?url";
 export interface RouterAppContext {}
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  ssr: false,
   head: () => ({
     meta: [
       {
