@@ -1,166 +1,108 @@
 /**
  * Alerts Query Hooks
- * Provides reactive hooks that integrate TanStack DB collections with React
- * All hooks use live queries for reactive updates and proper dependency tracking
+ * Provides reactive hooks that integrate TanStack DB collections with React.
  */
 
-import { useLiveQuery } from "@tanstack/react-db";
 import { eq } from "@tanstack/db";
-import { alertsCollection } from "../db/collections";
+import { useLiveQuery } from "@tanstack/react-db";
+
 import type { Alert } from "../api/alerts";
+import { alertsCollection } from "./collections";
+
+const selectAlertFields = ({ alert }: { alert: Alert }) => ({
+  id: alert.id,
+  title: alert.title,
+  description: alert.description,
+  severity: alert.severity,
+  status: alert.status,
+  created_at: alert.created_at,
+  updated_at: alert.updated_at,
+});
 
 /**
- * Fetch all alerts reactively
- * Auto-updates when collection changes, respects pagination if configured
+ * Fetch all alerts reactively.
  */
 export function useAlerts() {
   return useLiveQuery((q) =>
-    q.from({ alert: alertsCollection }).select(({ alert }) => ({
-      id: alert.id,
-      title: alert.title,
-      description: alert.description,
-      severity: alert.severity,
-      status: alert.status,
-      created_at: alert.created_at,
-      updated_at: alert.updated_at,
-    })),
+    q
+      .from({ alert: alertsCollection })
+      .orderBy(({ alert }) => alert.created_at, "desc")
+      .select(selectAlertFields),
   );
 }
 
 /**
- * Fetch a single alert by ID
- * Returns the specific alert or undefined if not found
+ * Fetch a single alert by ID.
  */
 export function useAlert(id?: string) {
   return useLiveQuery(
     (q) => {
       if (!id) {
-        return q
-          .from({ alert: alertsCollection })
-          .where(({ alert }) => eq(alert.id, "__missing__"))
-          .select(({ alert }) => ({
-            id: alert.id,
-            title: alert.title,
-            description: alert.description,
-            severity: alert.severity,
-            status: alert.status,
-            created_at: alert.created_at,
-            updated_at: alert.updated_at,
-          }));
+        return null;
       }
 
       return q
         .from({ alert: alertsCollection })
         .where(({ alert }) => eq(alert.id, id))
-        .select(({ alert }) => ({
-          id: alert.id,
-          title: alert.title,
-          description: alert.description,
-          severity: alert.severity,
-          status: alert.status,
-          created_at: alert.created_at,
-          updated_at: alert.updated_at,
-        }));
+        .select(selectAlertFields)
+        .findOne();
     },
     [id],
   );
 }
 
 /**
- * Fetch alerts filtered by status
- * Provides reactive subset for dashboard filtering
+ * Fetch alerts filtered by status.
+ * If no status is provided, returns all alerts.
  */
 export function useAlertsByStatus(status?: Alert["status"]) {
   return useLiveQuery(
     (q) => {
+      const baseQuery = q.from({ alert: alertsCollection });
+
       if (!status) {
-        return q
-          .from({ alert: alertsCollection })
-          .where(({ alert }) => eq(alert.id, "__missing__"))
-          .select(({ alert }) => ({
-            id: alert.id,
-            title: alert.title,
-            description: alert.description,
-            severity: alert.severity,
-            status: alert.status,
-            created_at: alert.created_at,
-            updated_at: alert.updated_at,
-          }));
+        return baseQuery.orderBy(({ alert }) => alert.created_at, "desc").select(selectAlertFields);
       }
 
-      return q
-        .from({ alert: alertsCollection })
+      return baseQuery
         .where(({ alert }) => eq(alert.status, status))
-        .select(({ alert }) => ({
-          id: alert.id,
-          title: alert.title,
-          description: alert.description,
-          severity: alert.severity,
-          status: alert.status,
-          created_at: alert.created_at,
-          updated_at: alert.updated_at,
-        }));
+        .orderBy(({ alert }) => alert.created_at, "desc")
+        .select(selectAlertFields);
     },
     [status],
   );
 }
 
 /**
- * Fetch alerts filtered by severity
- * Provides reactive subset for filtering and dashboard views
+ * Fetch alerts filtered by severity.
+ * If no severity is provided, returns all alerts.
  */
 export function useAlertsBySeverity(severity?: Alert["severity"]) {
   return useLiveQuery(
     (q) => {
+      const baseQuery = q.from({ alert: alertsCollection });
+
       if (!severity) {
-        return q
-          .from({ alert: alertsCollection })
-          .where(({ alert }) => eq(alert.id, "__missing__"))
-          .select(({ alert }) => ({
-            id: alert.id,
-            title: alert.title,
-            description: alert.description,
-            severity: alert.severity,
-            status: alert.status,
-            created_at: alert.created_at,
-            updated_at: alert.updated_at,
-          }));
+        return baseQuery.orderBy(({ alert }) => alert.created_at, "desc").select(selectAlertFields);
       }
 
-      return q
-        .from({ alert: alertsCollection })
+      return baseQuery
         .where(({ alert }) => eq(alert.severity, severity))
-        .select(({ alert }) => ({
-          id: alert.id,
-          title: alert.title,
-          description: alert.description,
-          severity: alert.severity,
-          status: alert.status,
-          created_at: alert.created_at,
-          updated_at: alert.updated_at,
-        }));
+        .orderBy(({ alert }) => alert.created_at, "desc")
+        .select(selectAlertFields);
     },
     [severity],
   );
 }
 
 /**
- * Fetch alerts ordered by creation date (newest first)
- * Useful for timeline/list views
+ * Fetch alerts ordered by creation date (newest first).
  */
 export function useAlertsOrdered() {
   return useLiveQuery((q) =>
     q
       .from({ alert: alertsCollection })
       .orderBy(({ alert }) => alert.created_at, "desc")
-      .select(({ alert }) => ({
-        id: alert.id,
-        title: alert.title,
-        description: alert.description,
-        severity: alert.severity,
-        status: alert.status,
-        created_at: alert.created_at,
-        updated_at: alert.updated_at,
-      })),
+      .select(selectAlertFields),
   );
 }
