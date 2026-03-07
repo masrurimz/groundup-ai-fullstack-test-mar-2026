@@ -6,10 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.db import AsyncSessionLocal
+from app.services import bootstrap_data
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    async with AsyncSessionLocal() as session:
+        await bootstrap_data(session)
     yield
 
 
@@ -25,6 +29,7 @@ app.add_middleware(
 
 # Mount versioned API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
 
 # Compatibility path for existing /health endpoint
 @app.get("/health")
