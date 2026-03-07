@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "generate-routes": "bunx @tanstack/router-cli generate",
-    "generate-client": "openapi-ts -f openapi-ts.config.ts",
+    "generate-client": "bunx @hey-api/openapi-ts -f openapi-ts.config.ts",
     "build": "vite build",
     "serve": "vite preview",
     "dev:bare": "vite dev"

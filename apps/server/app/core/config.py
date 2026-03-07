@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import Literal
 
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 class Settings(BaseSettings):
@@ -20,16 +24,19 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
     # Database Configuration
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup"
-    )
+    DATABASE_URL: str = "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup"
+
+    # Dataset and media assets
+    DATASET_DIR: Path = Field(default=REPO_ROOT.parent / "extracted_data" / "Fullstack Test")
+    DATASET_FILE: str = "Test Dataset.xlsx"
+    SERVER_DATA_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data")
+    AUDIO_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data" / "audio")
+    SPECTROGRAM_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data" / "spectrograms")
 
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 settings = Settings()
