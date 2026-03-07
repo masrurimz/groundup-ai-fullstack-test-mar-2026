@@ -13,14 +13,12 @@ function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
   const { data: liveAlerts } = useAlertsOrdered();
-  const { data: selectedAlerts } = useAlert(alertId);
+  const { data: selectedAlertFromLiveQuery } = useAlert(alertId);
   const alerts = liveAlerts && liveAlerts.length > 0 ? liveAlerts : createMockAlerts();
 
-  const selectedFromLiveQuery = selectedAlerts?.[0];
-
   const selectedAlert = useMemo(
-    () => selectedFromLiveQuery ?? alerts.find((alert) => alert.id === alertId),
-    [selectedFromLiveQuery, alerts, alertId],
+    () => selectedAlertFromLiveQuery ?? alerts.find((alert) => alert.id === alertId),
+    [selectedAlertFromLiveQuery, alerts, alertId],
   );
 
   const selectedAlertId = selectedAlert?.id;
