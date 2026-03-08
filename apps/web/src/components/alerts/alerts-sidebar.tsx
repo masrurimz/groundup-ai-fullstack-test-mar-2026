@@ -14,7 +14,7 @@ import {
 import { AlertListItem } from "./alert-list-item";
 import type { AlertItem } from "./types";
 
-const ALL_MACHINES = "__all__";
+const ALL_MACHINES = "All Machines";
 
 interface AlertsSidebarProps {
   alerts: AlertItem[];
