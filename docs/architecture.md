@@ -44,6 +44,8 @@ The primary entity. Represents a single anomaly detection event from a machine s
 | `updated_at`          | datetime (tz)     | Last annotation timestamp                                    |
 | `updated_by`          | string            | Actor who last annotated (currently hardcoded to `admin-ui`) |
 
+| `status` | computed (hybrid_property) | "resolved" when both action and suspected_reason are set, otherwise "unresolved" |
+
 Text snapshot columns (`machine`, `sensor`, `suspected_reason`, `action`) exist alongside FK columns to preserve historical readability when lookup values are later renamed or deactivated.
 
 ### Machine
@@ -199,13 +201,46 @@ Alert detail is composed inline in `routes/alerts.$alertId.tsx`. Key sub-compone
 
 TanStack Query options and mutation hooks for alerts and lookup entities. Settings pages use `ensureQueryData` loaders for prefetch on route entry.
 
+## Analytics Endpoints
+
+| Method | Path                                                    | Description            |
+| ------ | ------------------------------------------------------- | ---------------------- |
+| GET    | `/api/v1/analytics/overview?days=30`                    | DashboardOverview      |
+| GET    | `/api/v1/analytics/alert-trends?days=30&interval=1 day` | AlertTrendBucket[]     |
+| GET    | `/api/v1/analytics/machine-health?days=30`              | MachineHealthSummary[] |
+
 ## Schema Migrations
 
-Two applied migrations:
+Six applied migrations:
 
-1. `0a412b99977d` — initial PostgreSQL/TimescaleDB schema with uuid7 PKs: `machines`, `sensors`, `reasons`, `actions`, `alerts`; `audit_log` as a TimescaleDB hypertable partitioned on `created_at`
+1. `0a412b99977d` — initial PostgreSQL/TimescaleDB schema with uuid7 PKs: `machines`, `sensors`, `reasons`, `actions`, `alerts`; `audit_log` as a TimescaleDB hypertable partitioned on `created_at` (alerts is a plain table at this stage)
+
 2. `b1c2d3e4f5a6` — adds `baseline_sound_clip` to `machines`
+
+3. `c2d3e4f5a6b7` — alerts hypertable (partition on timestamp, compression after 7d, segment by machine_id)
+
+4. `d3e4f5a6b7c8` — continuous aggregates (alerts_hourly_stats: bucket/machine_id/machine/anomaly_type, alert_count, unresolved_count)
+
+5. `e4f5a6b7c8d9` — CA realtime mode (materialized_only = false)
+
+6. `f5a6b7c8d9e0` — CA resolved logic (unresolved_count = action IS NULL OR suspected_reason IS NULL)
 
 Migration strategy: no backfill. The project had no production data at the time of initial migration. Fresh environments are seeded deterministically.
 
 See [`apps/server/MIGRATION_GUIDE.md`](../apps/server/MIGRATION_GUIDE.md) for migration commands.
+
+## TimescaleDB
+
+### Alerts Hypertable
+
+- `alerts` is a hypertable partitioned on `timestamp`
+- Compression policy after 7 days
+- Segmented by `machine_id`
+
+### Continuous Aggregates
+
+- `alerts_hourly_stats` is a continuous aggregate in realtime mode
+- Groups by `bucket/machine_id/machine/anomaly_type`
+- Tracks `alert_count` and `unresolved_count`
+- Refresh policy: 30-min interval, 3-hour lookback
+- After each alert PATCH, a manual `CALL refresh_continuous_aggregate()` is issued for the alert's creation-time 1-hour bucket, keeping `unresolved_count` consistent for historical alerts

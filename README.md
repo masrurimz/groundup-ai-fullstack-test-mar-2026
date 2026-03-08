@@ -44,7 +44,7 @@ A fullstack web application for monitoring industrial machine anomaly alerts. Op
 
 ## Architecture Overview
 
-The frontend (TanStack Start, SSR) communicates with a FastAPI backend over HTTP. The backend persists relational data (alerts, machines, reasons, actions) in PostgreSQL; the `audit_log` table uses a TimescaleDB hypertable for append-only mutation history with automatic compression on cold rows. All binary assets (audio WAVs, spectrogram PNGs, waveform JSON) are stored in RustFS — an S3-compatible object store. Audio and spectrograms are served via presigned S3 redirect URLs; waveform data goes through a three-tier cache before reaching the client.
+The frontend (TanStack Start, SSR) communicates with a FastAPI backend over HTTP. The backend persists relational data (alerts, machines, reasons, actions) in PostgreSQL. The `alerts` table is a TimescaleDB hypertable (partitioned on `timestamp`, compressed after 7 days, segmented by `machine_id`); a continuous aggregate `alerts_hourly_stats` powers all dashboard analytics (overview, trends, machine health). The `audit_log` table is a separate hypertable for append-only mutation history. All binary assets (audio WAVs, spectrogram PNGs, waveform JSON) are stored in RustFS — an S3-compatible object store. Audio and spectrograms are served via presigned S3 redirect URLs; waveform data goes through a three-tier cache before reaching the client.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full data model, API surface, and component map.
 
@@ -52,7 +52,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full data model, API 
 
 - **TanStack Start over Next.js** — edge SSR with file-based routing and first-class TanStack Query integration; no framework lock-in for signal processing-heavy data flows
 - **FastAPI + librosa** — Python's signal processing ecosystem (librosa, numpy, scipy) is the natural choice for audio analysis; EE background informs mel spectrogram parameter selection (fmax=8 kHz, 128 mel bins)
-- **PostgreSQL + TimescaleDB** — relational data (alerts, machines, reasons, actions) lives in PostgreSQL; the `audit_log` table is a TimescaleDB hypertable with automatic compression on cold rows, reducing storage cost for the append-only history
+- **PostgreSQL + TimescaleDB** — `alerts` is a hypertable (partitioned on `timestamp`, compressed after 7 days, segmented by `machine_id`); `alerts_hourly_stats` is a continuous aggregate in realtime mode that powers overview counts, alert trend charts, and machine health summaries; `audit_log` is a separate hypertable for append-only mutation history
 - **Three-tier waveform cache** — hot path: in-memory dict (zero I/O); warm path: pre-computed JSON in S3 (one network round-trip); cold path: librosa computation + S3 upload; subsequent requests never recompute
 - **Contract-first API** — FastAPI generates the OpenAPI spec; TypeScript client is generated via hey-api; CI verifies the client is in sync; no client/server drift
 - **S3/RustFS object storage** — binary assets are decoupled from the app server; audio and spectrograms are served via presigned redirect (no proxy buffering)

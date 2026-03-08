@@ -104,3 +104,19 @@ Audio WAVs, waveform JSON, and spectrogram PNGs are all stored in and served fro
 | `S3_REGION`     | S3 region (may be arbitrary for RustFS) |
 
 All S3 variables are injected at runtime via Infisical; there are no hardcoded defaults.
+
+## Business Logic
+
+An alert is `resolved` when both `action` and `suspected_reason` are non-null. Otherwise it is `unresolved`. The `status` field is a computed `@hybrid_property` on the `Alert` SQLAlchemy model — it is not stored in the database, but it is serialized in API responses via `from_attributes=True` on `AlertResponse`.
+
+## Seed Data
+
+`seed_dev_data()` creates:
+
+- 18 alerts across ~13 days, both CNC and Milling machines, all three severity levels
+- 3 alerts resolved (both action + suspected_reason assigned)
+- The rest are unresolved
+
+## Timestamp Shifting
+
+`seed_alerts()` shifts original dataset timestamps to recent dates by computing a delta so the latest alert lands on yesterday. This ensures the dashboard time-range filter (7d/30d/90d) always shows meaningful data.
