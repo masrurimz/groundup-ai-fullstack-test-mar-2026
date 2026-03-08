@@ -5,15 +5,19 @@
 
 import {
   getAlertApiV1AlertsAlertIdGet,
+  getWaveformApiV1AlertsAlertIdWaveformGet,
   listAlertsApiV1AlertsGet,
   updateAlertApiV1AlertsAlertIdPatch,
   type AlertResponse,
   type AlertUpdateRequest,
+  type WaveformResponse,
 } from "../api-client";
 
 import { getApiClient } from "./client";
+import { getApiV1BaseUrl } from "./config";
 
 export type Alert = AlertResponse;
+export type { WaveformResponse };
 
 export interface AlertsQuery {
   machine?: string;
@@ -22,24 +26,16 @@ export interface AlertsQuery {
   end_date?: string;
 }
 
-function unwrapResponse<T>(result: unknown): T | undefined {
-  if (result && typeof result === "object" && !Array.isArray(result) && "data" in result) {
-    return (result as { data?: T }).data;
-  }
-
-  return result as T;
-}
-
 /**
  * Fetch all alerts from backend.
  */
 export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
-  const result = await listAlertsApiV1AlertsGet({
+  const data = await listAlertsApiV1AlertsGet({
     client: getApiClient(),
     query,
   });
 
-  return unwrapResponse<Alert[]>(result) ?? [];
+  return data ?? [];
 }
 
 /**
@@ -47,17 +43,10 @@ export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
  */
 export async function fetchAlert(id: string): Promise<Alert> {
   const alertId = Number(id);
-  const result = await getAlertApiV1AlertsAlertIdGet({
+  return getAlertApiV1AlertsAlertIdGet({
     client: getApiClient(),
     path: { alert_id: alertId },
   });
-
-  const alert = unwrapResponse<Alert>(result);
-  if (!alert) {
-    throw new Error(`Alert ${id} not found`);
-  }
-
-  return alert;
 }
 
 /**
@@ -65,16 +54,34 @@ export async function fetchAlert(id: string): Promise<Alert> {
  */
 export async function updateAlert(id: string, payload: AlertUpdateRequest): Promise<Alert> {
   const alertId = Number(id);
-  const result = await updateAlertApiV1AlertsAlertIdPatch({
+  return updateAlertApiV1AlertsAlertIdPatch({
     client: getApiClient(),
     path: { alert_id: alertId },
     body: payload,
   });
+}
 
-  const alert = unwrapResponse<Alert>(result);
-  if (!alert) {
-    throw new Error(`Alert ${id} update returned no payload`);
-  }
+/**
+ * Fetch waveform data for an alert.
+ */
+export async function fetchWaveform(id: string): Promise<WaveformResponse> {
+  const alertId = Number(id);
+  return getWaveformApiV1AlertsAlertIdWaveformGet({
+    client: getApiClient(),
+    path: { alert_id: alertId },
+  });
+}
 
-  return alert;
+/**
+ * Get the direct audio URL for an alert.
+ */
+export function getAlertAudioUrl(id: string): string {
+  return `${getApiV1BaseUrl()}/alerts/${id}/audio`;
+}
+
+/**
+ * Get the direct spectrogram image URL for an alert.
+ */
+export function getAlertSpectrogramUrl(id: string): string {
+  return `${getApiV1BaseUrl()}/alerts/${id}/spectrogram`;
 }
