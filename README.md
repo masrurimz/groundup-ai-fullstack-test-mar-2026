@@ -1,6 +1,6 @@
 # groundup-ai-fullstack-test-mar-2026
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Hono, and more.
+This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), using React + TypeScript on the frontend and FastAPI on the backend.
 
 ## Features
 
@@ -8,7 +8,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **TanStack Start** - SSR framework with TanStack Router
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
-- **Hono** - Lightweight, performant server framework
+- **FastAPI** - Python backend API
 - **Bun** - Runtime environment
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
@@ -21,14 +21,27 @@ First, install the dependencies:
 bun install
 ```
 
-Then, run the development server:
+Then run migrations and seed data:
+
+```bash
+bun run db:migrate
+bun run seed:dev
+```
+
+Then start frontend + backend together:
 
 ```bash
 bun run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+The API is running at [http://localhost:8000](http://localhost:8000).
+
+## Dataset Source
+
+- The backend reads the provided dataset from `../extracted_data/Fullstack Test` (parent directory of this repo).
+- Expected files are `Test Dataset.xlsx` and the referenced wav files (`1.wav` ... `6.wav`).
+- On seed, wav files are copied to `apps/server/data/audio` and used for waveform/spectrogram endpoints.
 
 ## Deployment (Cloudflare via Alchemy)
 
@@ -48,7 +61,7 @@ For more details, see the guide on [Deploying to Cloudflare with Alchemy](https:
 groundup-ai-fullstack-test-mar-2026/
 ├── apps/
 │   ├── web/         # Frontend application (React + TanStack Start)
-│   └── server/      # Backend API (Hono)
+│   └── server/      # Backend API (FastAPI)
 ├── packages/
 ```
 
@@ -58,5 +71,14 @@ groundup-ai-fullstack-test-mar-2026/
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
 - `bun run dev:server`: Start only the server
+- `bun run db:migrate`: Run backend database migrations
+- `bun run seed`: Seed lookup + dataset alerts
+- `bun run seed:dev`: Seed lookup + dataset alerts + dev-only sample alerts
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run check`: Run Oxlint and Oxfmt
+
+## Tailscale Access
+
+- Backend runs on `0.0.0.0:8000` and frontend on `0.0.0.0:3001` in dev mode.
+- Set `apps/server/.env` with `CORS_ORIGINS` including your Tailscale web origin (for example `http://your-machine.your-tailnet.ts.net:3001`).
+- Set `apps/web/.env` `VITE_SERVER_URL` to your backend URL (for example `http://your-machine.your-tailnet.ts.net:8000`) when testing from your Mac.
