@@ -1,4 +1,5 @@
 import math
+import os
 import shutil
 import wave
 from collections.abc import AsyncGenerator
@@ -15,7 +16,10 @@ from app.core.db import get_session
 from app.main import app
 from app.models import Action, Alert, Base, Machine, Reason, Sensor
 
-TEST_DATABASE_URL = "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup_test"
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup_test",
+)
 
 
 def _create_test_wav(
