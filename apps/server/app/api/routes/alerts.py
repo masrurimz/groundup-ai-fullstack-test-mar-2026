@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.models import Action, Alert, AuditLog, Reason
+from app.models import Action, Alert, AuditLog, Machine, Reason
 from app.schemas import AlertResponse, AlertUpdateRequest, WaveformResponse
 from app.services.media import ensure_spectrogram, generate_waveform_cached
 
@@ -255,4 +255,86 @@ async def get_spectrogram(
         path=str(spectrogram_path),
         media_type="image/png",
         filename=f"spectrogram_{alert_id}.png",
+    )
+
+
+async def _get_baseline_audio_path_or_404(session: AsyncSession, alert_id: uuid.UUID) -> Path:
+    """Resolve alert -> machine -> baseline_sound_clip path, raising 404 at each step."""
+    alert = await _get_alert_or_404(session, alert_id)
+    if alert.machine_id is None:
+        raise HTTPException(status_code=404, detail="Alert has no associated machine")
+    result = await session.execute(select(Machine).where(Machine.id == alert.machine_id))
+    machine = result.scalar_one_or_none()
+    if machine is None:
+        raise HTTPException(status_code=404, detail="Machine not found")
+    if not machine.baseline_sound_clip:
+        raise HTTPException(status_code=404, detail="No baseline audio available for this machine")
+    audio_path = settings.AUDIO_DIR / machine.baseline_sound_clip
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Baseline audio file not found")
+    return audio_path
+
+
+@router.get("/{alert_id}/baseline/audio")
+async def get_baseline_audio(
+    alert_id: uuid.UUID,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    audio_path = await _get_baseline_audio_path_or_404(session, alert_id)
+    file_size = audio_path.stat().st_size
+    range_header = request.headers.get("range")
+
+    if range_header:
+        start, end = _parse_range_header(range_header, file_size)
+        content_length = end - start + 1
+        return StreamingResponse(
+            _iter_audio_bytes(audio_path, start, end),
+            status_code=206,
+            media_type="audio/wav",
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(content_length),
+            },
+        )
+
+    return StreamingResponse(
+        _iter_audio_bytes(audio_path, 0, file_size - 1),
+        status_code=200,
+        media_type="audio/wav",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+        },
+    )
+
+
+@router.get("/{alert_id}/baseline/waveform", response_model=WaveformResponse)
+async def get_baseline_waveform(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> WaveformResponse:
+    audio_path = await _get_baseline_audio_path_or_404(session, alert_id)
+    waveform = generate_waveform_cached(audio_path)
+    return WaveformResponse(alert_id=alert_id, **waveform)
+
+
+@router.get("/{alert_id}/baseline/spectrogram")
+async def get_baseline_spectrogram(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> FileResponse:
+    audio_path = await _get_baseline_audio_path_or_404(session, alert_id)
+    # Use a stable cache key: machine baseline doesn't change per-alert,
+    # but we cache by alert so dev seeds (same machine, different alerts) get fast responses too.
+    # Key on the wav filename for proper cache reuse across alerts on the same machine.
+    clip_name = audio_path.stem
+    spectrogram_path = settings.SPECTROGRAM_DIR / f"baseline_{clip_name}.png"
+    if not spectrogram_path.exists():
+        ensure_spectrogram(audio_path, spectrogram_path)
+    return FileResponse(
+        path=str(spectrogram_path),
+        media_type="image/png",
+        filename=f"baseline_spectrogram_{alert_id}.png",
     )
