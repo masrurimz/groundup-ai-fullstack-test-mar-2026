@@ -27,11 +27,16 @@
     "dev:server": "bun run env:run turbo -F server dev",
     "dev:web": "bun run env:run turbo -F web dev",
     "db:migrate": "bun run env:run bun run -F server db:migrate",
-    "migrate": "bun run env:run bun run -F server db:migrate",
     "seed": "bun run env:run bun run -F server seed",
     "seed:dev": "bun run env:run bun run -F server seed:dev",
     "deploy": "bun run env:run turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
     "destroy": "bun run env:run turbo -F @groundup-ai-fullstack-test-mar-2026/infra destroy",
+    "deploy:local": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build",
+    "deploy:local:web": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build web",
+    "deploy:local:server": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build server",
+    "deploy:local:logs": "docker compose -f deploy/local-cloudflare/docker-compose.yml logs -f",
+    "deploy:local:seed": "docker compose -f deploy/local-cloudflare/docker-compose.yml exec server python -m app.scripts.seed",
+    "deploy:local:down": "docker compose -f deploy/local-cloudflare/docker-compose.yml down",
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {
