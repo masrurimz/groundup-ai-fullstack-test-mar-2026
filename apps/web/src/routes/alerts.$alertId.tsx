@@ -23,6 +23,7 @@ import {
   getAlertSpectrogramUrl,
   type WaveformResponse,
 } from "../lib/api/alerts";
+import type { AlertView } from "../lib/api/alert-view";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 import {
   actionsQueryOptions,
@@ -448,8 +449,6 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
 // ---------------------------------------------------------------------------
 // Alert Edit Form – TanStack Form + TanStack Query
 // ---------------------------------------------------------------------------
-
-import type { AlertView } from "../lib/api/alert-view";
 
 function AlertEditForm({ alert }: { alert: AlertView }) {
   const machineId = alert.machine_id ?? undefined;

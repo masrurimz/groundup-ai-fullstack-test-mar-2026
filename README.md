@@ -21,6 +21,26 @@ First, install the dependencies:
 bun install
 ```
 
+### Secrets Management (Infisical)
+
+This project uses [Infisical](https://infisical.zahid.es) for secrets management. No `.env` files are needed — all secrets are injected at runtime via the Infisical CLI.
+
+**First-time setup:**
+
+```bash
+# Login to the self-hosted Infisical instance
+infisical login --domain https://infisical.zahid.es/api
+```
+
+**Switch environments:**
+
+```bash
+bun env:use dev       # development (default)
+bun env:use staging   # staging
+bun env:use prod      # production
+bun env:use           # show current environment
+```
+
 Then run migrations and seed data:
 
 ```bash
@@ -89,5 +109,4 @@ groundup-ai-fullstack-test-mar-2026/
 ## Tailscale Access
 
 - Backend runs on `0.0.0.0:8000` and frontend on `0.0.0.0:3001` in dev mode.
-- Set `apps/server/.env` with `CORS_ORIGINS` including your Tailscale web origin (for example `http://your-machine.your-tailnet.ts.net:3001`).
-- Set `apps/web/.env` `VITE_SERVER_URL` to your backend URL (for example `http://your-machine.your-tailnet.ts.net:8000`) when testing from your Mac.
+- Configure `CORS_ORIGINS` and `VITE_SERVER_URL` in Infisical with your Tailscale hostname.
