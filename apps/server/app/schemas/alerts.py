@@ -1,26 +1,45 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class AlertResponse(BaseModel):
     id: int
     timestamp: datetime
     machine: str
+    machine_id: int | None
     anomaly_type: str
     sensor: str
     sound_clip: str
     suspected_reason: str | None
+    suspected_reason_id: int | None
     action: str | None
+    action_id: int | None
     comment: str | None
+    updated_at: datetime | None
+    updated_by: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class AlertUpdateRequest(BaseModel):
-    suspected_reason: str | None = None
-    action: str | None = None
-    comment: str | None = None
+    suspected_reason_id: int | None = None
+    action_id: int | None = None
+    comment: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("comment")
+    @classmethod
+    def normalize_comment(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized if normalized else None
+
+    @model_validator(mode="after")
+    def ensure_non_empty_patch(self) -> "AlertUpdateRequest":
+        if not self.model_fields_set:
+            raise ValueError("at least one field must be provided")
+        return self
 
 
 class AlertListQuery(BaseModel):

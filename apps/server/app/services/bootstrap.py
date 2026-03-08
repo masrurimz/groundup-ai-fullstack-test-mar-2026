@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models import Action, Alert, Reason
+from app.models import Action, Alert, Machine, Reason
 from app.services.media import generate_spectrogram
 
 DEV_SEED_SOUND_CLIP = "dev-seed.wav"
@@ -25,6 +25,31 @@ def _normalize_sensor(value: object) -> str:
     if isinstance(value, float):
         return str(int(value))
     return str(value)
+
+
+def _normalize_key(value: str) -> str:
+    return " ".join(value.strip().split()).lower()
+
+
+async def _ensure_machine(session: AsyncSession, machine_name: str) -> Machine:
+    key = _normalize_key(machine_name)
+    existing = (
+        await session.execute(select(Machine).where(Machine.key == key))
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+
+    now = datetime.now(tz=UTC)
+    machine = Machine(
+        key=key,
+        name=machine_name,
+        is_active=True,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(machine)
+    await session.flush()
+    return machine
 
 
 def copy_wav_files() -> None:
@@ -50,8 +75,18 @@ def _create_dev_seed_wav(
 
 
 async def seed_lookup_data(session: AsyncSession) -> None:
-    reasons_existing = await session.execute(select(Reason.id).limit(1))
-    if reasons_existing.scalar_one_or_none() is None:
+    reasons_existing = (await session.execute(select(Reason.id).limit(1))).scalar_one_or_none()
+    actions_existing = (await session.execute(select(Action.id).limit(1))).scalar_one_or_none()
+
+    machine_rows = [
+        "CNC Machine",
+        "Milling Machine",
+    ]
+    machine_by_name: dict[str, Machine] = {}
+    for machine_name in machine_rows:
+        machine_by_name[machine_name] = await _ensure_machine(session, machine_name)
+
+    if reasons_existing is None:
         reasons_data = [
             {"machine": "CNC Machine", "reason": "Spindle Error"},
             {"machine": "CNC Machine", "reason": "Axis Problem"},
@@ -60,13 +95,33 @@ async def seed_lookup_data(session: AsyncSession) -> None:
             {"machine": "Milling Machine", "reason": "Router Fault"},
             {"machine": "Milling Machine", "reason": "Normal"},
         ]
+        now = datetime.now(tz=UTC)
         for item in reasons_data:
-            session.add(Reason(machine=item["machine"], reason=item["reason"]))
+            machine = machine_by_name[item["machine"]]
+            reason_name = item["reason"]
+            session.add(
+                Reason(
+                    machine_id=machine.id,
+                    key=_normalize_key(reason_name),
+                    reason=reason_name,
+                    is_active=True,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
 
-    actions_existing = await session.execute(select(Action.id).limit(1))
-    if actions_existing.scalar_one_or_none() is None:
+    if actions_existing is None:
+        now = datetime.now(tz=UTC)
         for action_name in ["Immediate", "Later", "No Action"]:
-            session.add(Action(action=action_name))
+            session.add(
+                Action(
+                    key=_normalize_key(action_name),
+                    action=action_name,
+                    is_active=True,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
 
     await session.commit()
 
@@ -81,18 +136,29 @@ async def seed_alerts(session: AsyncSession) -> None:
         return
 
     df = pd.read_excel(dataset)
+    machine_rows = sorted({str(row["Machine"]) for _, row in df.iterrows()})
+    machine_by_name: dict[str, Machine] = {}
+    for machine_name in machine_rows:
+        machine_by_name[machine_name] = await _ensure_machine(session, machine_name)
+
     for _, row in df.iterrows():
         timestamp = datetime.fromtimestamp(int(row["Timestamp"]), tz=UTC)
+        machine_name = str(row["Machine"])
         session.add(
             Alert(
                 timestamp=timestamp,
-                machine=str(row["Machine"]),
+                machine=machine_name,
+                machine_id=machine_by_name[machine_name].id,
                 anomaly_type=str(row["Anomaly"]),
                 sensor=_normalize_sensor(row["Sensor"]),
                 sound_clip=str(row["soundClip"]),
                 suspected_reason=None,
+                suspected_reason_id=None,
                 action=None,
+                action_id=None,
                 comment=None,
+                updated_at=None,
+                updated_by=None,
             )
         )
 
@@ -122,18 +188,24 @@ async def seed_dev_data(session: AsyncSession) -> None:
     if not dev_wav.exists():
         _create_dev_seed_wav(dev_wav)
 
+    machine = await _ensure_machine(session, "CNC Machine")
     now = datetime.now(tz=UTC)
     for index, anomaly in enumerate(["Mild", "Moderate", "Severe"], start=1):
         session.add(
             Alert(
                 timestamp=now,
                 machine="CNC Machine",
+                machine_id=machine.id,
                 anomaly_type=anomaly,
                 sensor=f"DEV-SENSOR-{index}",
                 sound_clip=DEV_SEED_SOUND_CLIP,
                 suspected_reason=None,
+                suspected_reason_id=None,
                 action=None,
+                action_id=None,
                 comment="Seeded by seed:dev",
+                updated_at=None,
+                updated_by=None,
             )
         )
 

@@ -62,13 +62,28 @@ uv run alembic history
 
 Lists all migrations in order.
 
-## Initial Migration
+## Applied Migrations
 
-The initial migration (`69333faeabcc`) creates the following tables with proper schema:
+### Initial migration (`69333faeabcc`)
 
 - **alerts**: Machine anomaly alerts with timestamp, sensor, machine ID, and optional analysis fields
 - **reasons**: Predefined anomaly reasons indexed by machine
 - **actions**: Recommended remediation actions
+
+### Schema v2 migration (`1f0f7c9f4a21`)
+
+- Adds **machines** catalog and **audit_log** tables
+- Rebuilds **reasons** and **actions** with normalized keys and `is_active` flags
+- Extends **alerts** with `machine_id`, `suspected_reason_id`, `action_id`, `updated_at`, `updated_by`
+- Adds indexes for alert lookup ID fields
+
+This migration is intentionally **no-backfill**. Because this project currently has no production data, we avoid one-off reconciliation logic and rely on deterministic seeding for fresh environments.
+
+## Seed Strategy For V2
+
+- `bootstrap.py` now seeds machines first, then machine-scoped reasons, then global actions
+- alert seed rows include both machine snapshot text (`machine`) and foreign keys (`machine_id`)
+- reason/action text snapshot columns on alerts remain for historical readability
 
 ## Async SQLAlchemy Integration
 
@@ -81,8 +96,9 @@ The `alembic/env.py` file is configured for async SQLAlchemy:
 ## Key Principles
 
 1. **No create_all in production**: The app startup flow does NOT call `SQLAlchemy.create_all()`. All schema changes go through Alembic.
-2. **Automatic model detection**: Changes to models in `app/models.py` are automatically detected during `alembic revision --autogenerate`
-3. **Type awareness**: Alembic compares column types and maintains PostgreSQL-specific details (e.g., timezone handling)
+2. **No backfill when unnecessary**: For pre-production schema pivots, prefer clean migrations + seed updates over fragile backfill logic.
+3. **Automatic model detection**: Changes to models in `app/models.py` are automatically detected during `alembic revision --autogenerate`
+4. **Type awareness**: Alembic compares column types and maintains PostgreSQL-specific details (e.g., timezone handling)
 
 ## Troubleshooting
 
