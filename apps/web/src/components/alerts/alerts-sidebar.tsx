@@ -1,8 +1,15 @@
-import { ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { AlertListItem } from "./alert-list-item";
 import type { AlertItem } from "./types";
@@ -24,39 +31,41 @@ export function AlertsSidebar({
 }: AlertsSidebarProps) {
   return (
     <aside className="flex max-h-[45vh] min-h-0 flex-col border-b border-border bg-card lg:max-h-none lg:border-r lg:border-b-0">
-      <div className="p-4">
-        <Button
-          variant="outline"
-          aria-label="Select machine filter"
-          className="w-full justify-between rounded-md px-3 py-2 text-sm text-foreground"
-        >
-          <span>{machineLabel}</span>
-          <ChevronDown className="h-4 w-4" />
-        </Button>
+      {/* Machine Selector */}
+      <div className="border-b border-border p-4">
+        <Select defaultValue={machineLabel}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="CNC Machine">CNC Machine</SelectItem>
+            <SelectItem value="Miling Machine">Miling Machine</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <Separator />
-
-      <div className="p-4">
+      {/* Back Navigation */}
+      <div className="border-b border-border p-4">
         <Button
           variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
           onClick={onBack}
-          className="px-0 text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
       </div>
 
-      <Separator />
-
-      <div className="flex items-center justify-between bg-muted/40 px-4 py-3">
+      {/* Alert Count */}
+      <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
         <p className="text-sm font-medium text-muted-foreground">{alerts.length} Alerts</p>
-        <span className="rounded-full bg-primary px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+        <Badge className="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
           2 New
-        </span>
+        </Badge>
       </div>
 
+      {/* Alert List */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-3 p-3">
           {alerts.map((alert) => (
