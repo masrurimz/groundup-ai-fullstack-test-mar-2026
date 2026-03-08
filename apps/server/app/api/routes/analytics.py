@@ -6,7 +6,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
-from app.models import Alert, Machine
+from app.models import Machine
 from app.schemas.analytics import AlertTrendPoint, DashboardOverview, MachineHealthSummary
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -31,21 +31,25 @@ async def get_overview(
     machine_row = machine_counts.one()
     total_machines: int = machine_row.total
     active_machines: int = machine_row.active
-
-    # Alert stats in 24h window
-    alert_stats = await session.execute(
-        select(
-            func.count().label("total"),
-            func.count().filter(Alert.anomaly_type == "severe").label("critical"),
-            func.count().filter(Alert.anomaly_type == "moderate").label("warning"),
-            func.count().filter(Alert.action.isnot(None)).label("resolved"),
-        ).where(Alert.timestamp >= window_start)
+    # Alert stats in 24h window from continuous aggregate
+    alert_stats_sql = """
+        SELECT
+            COALESCE(SUM(alert_count), 0) AS total,
+            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'severe'), 0) AS critical,
+            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'moderate'), 0) AS warning,
+            COALESCE(SUM(GREATEST(0, alert_count - unresolved_count)), 0) AS resolved
+        FROM alerts_hourly_stats
+        WHERE bucket >= :since
+    """
+    result = await session.execute(
+        text(alert_stats_sql),
+        {"since": window_start},
     )
-    alert_row = alert_stats.one()
-    total_alerts_24h: int = alert_row.total
-    critical_alerts: int = alert_row.critical
-    warning_alerts: int = alert_row.warning
-    resolved_count: int = alert_row.resolved
+    alert_row = result.one()
+    total_alerts_24h: int = int(alert_row.total)
+    critical_alerts: int = int(alert_row.critical)
+    warning_alerts: int = int(alert_row.warning)
+    resolved_count: int = int(alert_row.resolved)
 
     resolved_rate = (resolved_count / total_alerts_24h * 100.0) if total_alerts_24h > 0 else 100.0
 
@@ -76,27 +80,38 @@ async def get_alert_trends(
 
     since = datetime.now(tz=UTC) - timedelta(days=days)
 
-    bucket_expr = func.time_bucket(text(f"INTERVAL '{interval}'"), Alert.timestamp)
-
-    query = (
-        select(
-            bucket_expr.label("bucket"),
-            func.count().label("alert_count"),
-            Alert.machine.label("machine"),
-        )
-        .where(Alert.timestamp >= since)
-        .group_by(bucket_expr, Alert.machine)
-        .order_by(bucket_expr)
-    )
-
+    # interval is validated against _VALID_INTERVALS above — safe to interpolate.
     if machine_id is not None:
-        query = query.where(Alert.machine_id == machine_id)
+        sql = f"""
+            SELECT
+                time_bucket(INTERVAL '{interval}', bucket) AS bucket,
+                SUM(alert_count) AS alert_count,
+                machine
+            FROM alerts_hourly_stats
+            WHERE bucket >= :since
+            AND machine_id = :machine_id
+            GROUP BY 1, machine
+            ORDER BY 1
+        """
+        params: dict = {"since": since, "machine_id": str(machine_id)}
+    else:
+        sql = f"""
+            SELECT
+                time_bucket(INTERVAL '{interval}', bucket) AS bucket,
+                SUM(alert_count) AS alert_count,
+                machine
+            FROM alerts_hourly_stats
+            WHERE bucket >= :since
+            GROUP BY 1, machine
+            ORDER BY 1
+        """
+        params = {"since": since}
 
-    result = await session.execute(query)
+    result = await session.execute(text(sql), params)
     rows = result.all()
 
     return [
-        AlertTrendPoint(bucket=row.bucket, count=row.alert_count, machine=row.machine)
+        AlertTrendPoint(bucket=row.bucket, count=int(row.alert_count), machine=row.machine)
         for row in rows
     ]
 
@@ -105,46 +120,38 @@ async def get_alert_trends(
 async def get_machine_health(
     session: AsyncSession = Depends(get_session),
 ) -> list[MachineHealthSummary]:
-    # Subquery: per-machine alert aggregates
-    alert_agg = (
-        select(
-            Alert.machine_id.label("machine_id"),
-            func.count().label("total_alerts"),
-            func.count().filter(Alert.action.is_(None)).label("active_alerts"),
-            func.count().filter(Alert.anomaly_type == "severe").label("critical_count"),
-            func.count().filter(Alert.anomaly_type == "moderate").label("warning_count"),
-            func.max(Alert.timestamp).label("last_alert_at"),
-        )
-        .group_by(Alert.machine_id)
-        .subquery()
-    )
+    # Get all machines
+    machines_result = await session.execute(select(Machine.id, Machine.name).order_by(Machine.name))
+    machines = machines_result.all()
 
-    query = (
-        select(
-            Machine.id.label("machine_id"),
-            Machine.name.label("machine_name"),
-            func.coalesce(alert_agg.c.total_alerts, 0).label("total_alerts"),
-            func.coalesce(alert_agg.c.active_alerts, 0).label("active_alerts"),
-            func.coalesce(alert_agg.c.critical_count, 0).label("critical_count"),
-            func.coalesce(alert_agg.c.warning_count, 0).label("warning_count"),
-            alert_agg.c.last_alert_at.label("last_alert_at"),
-        )
-        .outerjoin(alert_agg, Machine.id == alert_agg.c.machine_id)
-        .order_by(Machine.name)
-    )
+    # Get per-machine alert aggregates from continuous aggregate
+    alert_stats_sql = """
+        SELECT
+            machine_id,
+            COALESCE(SUM(alert_count), 0) AS total_alerts,
+            COALESCE(SUM(unresolved_count), 0) AS active_alerts,
+            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'severe'), 0) AS critical_count,
+            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'moderate'), 0) AS warning_count,
+            MAX(bucket) AS last_alert_at
+        FROM alerts_hourly_stats
+        GROUP BY machine_id
+    """
+    result = await session.execute(text(alert_stats_sql))
+    alert_rows = result.all()
 
-    result = await session.execute(query)
-    rows = result.all()
+    # Build lookup dict keyed by machine_id
+    alert_data = {row.machine_id: row for row in alert_rows}
 
+    # Join in Python and build response
     return [
         MachineHealthSummary(
-            machine_id=row.machine_id,
-            machine_name=row.machine_name,
-            total_alerts=row.total_alerts,
-            active_alerts=row.active_alerts,
-            critical_count=row.critical_count,
-            warning_count=row.warning_count,
-            last_alert_at=row.last_alert_at,
+            machine_id=row.id,
+            machine_name=row.name,
+            total_alerts=int(alert_data[row.id].total_alerts) if row.id in alert_data else 0,
+            active_alerts=int(alert_data[row.id].active_alerts) if row.id in alert_data else 0,
+            critical_count=int(alert_data[row.id].critical_count) if row.id in alert_data else 0,
+            warning_count=int(alert_data[row.id].warning_count) if row.id in alert_data else 0,
+            last_alert_at=alert_data[row.id].last_alert_at if row.id in alert_data else None,
         )
-        for row in rows
+        for row in machines
     ]

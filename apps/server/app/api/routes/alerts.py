@@ -184,7 +184,7 @@ async def get_audio(
     return RedirectResponse(url=url, status_code=302)
 
 
-@router.get("/{alert_id}/waveform")
+@router.get("/{alert_id}/waveform", response_model=WaveformResponse)
 async def get_waveform(
     alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
@@ -262,7 +262,7 @@ async def get_baseline_audio(
     return RedirectResponse(url=url, status_code=302)
 
 
-@router.get("/{alert_id}/baseline/waveform")
+@router.get("/{alert_id}/baseline/waveform", response_model=WaveformResponse)
 async def get_baseline_waveform(
     alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
