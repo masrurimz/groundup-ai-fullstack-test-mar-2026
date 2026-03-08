@@ -15,7 +15,7 @@ import { getApiClient } from "./client";
  * Fetch all lookup items.
  */
 export async function fetchLookupItems(): Promise<LookupItem[]> {
-  const data = await getLookupItemsApiV1LookupGet({ client: getApiClient() });
+  const { data } = await getLookupItemsApiV1LookupGet({ client: getApiClient() });
   return data ?? [];
 }
 
@@ -23,7 +23,7 @@ export async function fetchLookupItems(): Promise<LookupItem[]> {
  * Fetch lookup items by category.
  */
 export async function fetchLookupByCategory(category: string): Promise<LookupItem[]> {
-  const data = await getLookupItemsApiV1LookupGet({
+  const { data } = await getLookupItemsApiV1LookupGet({
     client: getApiClient(),
     query: { category },
   });
@@ -33,18 +33,20 @@ export async function fetchLookupByCategory(category: string): Promise<LookupIte
 /**
  * Fetch reason options for a machine.
  */
-export async function fetchReasons(machine: string): Promise<string[]> {
-  return getReasonsApiV1LookupReasonsGet({
+export async function fetchReasons(machine: string): Promise<LookupItem[]> {
+  const { data } = await getReasonsApiV1LookupReasonsGet({
     client: getApiClient(),
     query: { machine },
   });
+  return data ?? [];
 }
 
 /**
  * Fetch all action options.
  */
-export async function fetchActions(): Promise<string[]> {
-  return getActionsApiV1LookupActionsGet({ client: getApiClient() });
+export async function fetchActions(): Promise<LookupItem[]> {
+  const { data } = await getActionsApiV1LookupActionsGet({ client: getApiClient() });
+  return data ?? [];
 }
 
 export type { LookupItem };

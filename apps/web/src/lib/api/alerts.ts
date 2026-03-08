@@ -30,7 +30,7 @@ export interface AlertsQuery {
  * Fetch all alerts from backend.
  */
 export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
-  const data = await listAlertsApiV1AlertsGet({
+  const { data } = await listAlertsApiV1AlertsGet({
     client: getApiClient(),
     query,
   });
@@ -43,10 +43,11 @@ export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
  */
 export async function fetchAlert(id: string): Promise<Alert> {
   const alertId = Number(id);
-  return getAlertApiV1AlertsAlertIdGet({
+  const { data } = await getAlertApiV1AlertsAlertIdGet({
     client: getApiClient(),
     path: { alert_id: alertId },
   });
+  return data!;
 }
 
 /**
@@ -54,11 +55,12 @@ export async function fetchAlert(id: string): Promise<Alert> {
  */
 export async function updateAlert(id: string, payload: AlertUpdateRequest): Promise<Alert> {
   const alertId = Number(id);
-  return updateAlertApiV1AlertsAlertIdPatch({
+  const { data } = await updateAlertApiV1AlertsAlertIdPatch({
     client: getApiClient(),
     path: { alert_id: alertId },
     body: payload,
   });
+  return data!;
 }
 
 /**
@@ -66,10 +68,11 @@ export async function updateAlert(id: string, payload: AlertUpdateRequest): Prom
  */
 export async function fetchWaveform(id: string): Promise<WaveformResponse> {
   const alertId = Number(id);
-  return getWaveformApiV1AlertsAlertIdWaveformGet({
+  const { data } = await getWaveformApiV1AlertsAlertIdWaveformGet({
     client: getApiClient(),
     path: { alert_id: alertId },
   });
+  return data!;
 }
 
 /**

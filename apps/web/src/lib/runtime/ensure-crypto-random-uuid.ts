@@ -38,7 +38,7 @@ const randomUuidFromMath = (): string => {
 };
 
 const randomUUID = (): string => {
-  if (globalThis.crypto?.getRandomValues) {
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
     return randomUuidFromCrypto();
   }
 

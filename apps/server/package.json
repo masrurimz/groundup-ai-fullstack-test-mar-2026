@@ -7,8 +7,8 @@
     "seed": "uv run python -m app.scripts.seed",
     "seed:dev": "uv run python -m app.scripts.seed_dev",
     "build": "echo 'no build step for python'",
-    "lint": "uv run ruff check .",
-    "check-types": "uv run ty check",
+    "check:lint": "uv run ruff check . --fix",
+    "check:types": "uv run ty check",
     "format": "uv run ruff format .",
     "test": "uv run pytest"
   }
