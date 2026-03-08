@@ -16,6 +16,9 @@
   },
   "type": "module",
   "scripts": {
+    "test": "turbo test",
+    "test:web": "turbo test --filter=web",
+    "test:server": "turbo test --filter=server",
     "env:run": "infisical run --domain https://infisical.zahid.es/api --env dev --",
     "env:use": "bun scripts/env-switch.ts",
     "dev": "bun run env:run turbo dev",

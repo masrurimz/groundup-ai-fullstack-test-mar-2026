@@ -33,7 +33,9 @@ A fullstack web application for monitoring industrial machine anomaly alerts. Op
 | Monorepo   | Turborepo, Bun 1.3.9                                                           |
 | Deployment | Docker Compose + Cloudflare Tunnel                                             |
 | Secrets    | Infisical (self-hosted)                                                        |
-| Linting    | Oxlint + Oxfmt                                                                 |
+| Linting    | Oxlint + Oxfmt (frontend), Ruff (backend)                                      |
+| Typing     | TypeScript strict + `tsc` (frontend), ty (backend, Python 3.13)                |
+| Testing    | Vitest + Testing Library (frontend), pytest (backend)                          |
 
 ## Architecture Overview
 
@@ -153,12 +155,18 @@ bun run dev:web      # frontend only
 bun run dev:server   # backend only
 ```
 
-## Testing
+### Run all tests
+
+```bash
+bun run test
+```
+
+Runs both frontend (Vitest) and backend (pytest) via Turborepo.
 
 ### Backend
 
 ```bash
-cd apps/server && python -m pytest
+uv run --directory apps/server pytest
 ```
 
 Covers: alert CRUD, filtering by machine/anomaly/date, annotation validation (inactive reasons, cross-machine reasons), audit log entries.
@@ -166,7 +174,7 @@ Covers: alert CRUD, filtering by machine/anomaly/date, annotation validation (in
 ### Frontend
 
 ```bash
-cd apps/web && bun test
+bun run test --filter=web
 ```
 
 Covers: StatsCard rendering variants, SeverityBadge classification, alert list item display.
@@ -179,20 +187,22 @@ Currently deployed on a local server (GCP trial expired).
 
 ## Available Scripts
 
-| Command                   | Description                                               |
-| ------------------------- | --------------------------------------------------------- |
-| `bun run dev`             | Start all apps (Turborepo, Infisical env injected)        |
-| `bun run dev:web`         | Frontend only                                             |
-| `bun run dev:server`      | Backend only                                              |
-| `bun run build`           | Production build                                          |
-| `bun run db:migrate`      | Apply pending Alembic migrations                          |
-| `bun run seed`            | Seed machines, reasons, actions, dataset alerts           |
-| `bun run seed:dev`        | As above + dev-only sample alerts                         |
-| `bun run check`           | Run Oxlint + Oxfmt (lint and format fix)                  |
-| `bun run check:types`     | TypeScript type check (all apps)                          |
-| `bun run generate:client` | Regenerate OpenAPI TypeScript client from FastAPI spec    |
-| `bun run deploy`          | Deploy frontend to Cloudflare Workers (Alchemy — legacy)  |
-| `bun run destroy`         | Teardown Cloudflare Workers deployment (Alchemy — legacy) |
+| Command                   | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
+| `bun run dev`             | Start all apps (Turborepo, Infisical env injected)            |
+| `bun run dev:web`         | Frontend only                                                 |
+| `bun run dev:server`      | Backend only                                                  |
+| `bun run build`           | Production build                                              |
+| `bun run db:migrate`      | Apply pending Alembic migrations                              |
+| `bun run seed`            | Seed machines, reasons, actions, dataset alerts               |
+| `bun run seed:dev`        | As above + dev-only sample alerts                             |
+| `bun run check`           | Run Oxlint + Oxfmt (lint and format fix)                      |
+| `bun run check:types`     | TypeScript type check (all apps)                              |
+| `bun run check:lint`      | Run linters (Oxlint for frontend, Ruff for backend) via Turbo |
+| `bun run test`            | Run all test suites (Vitest + pytest) via Turbo               |
+| `bun run generate:client` | Regenerate OpenAPI TypeScript client from FastAPI spec        |
+| `bun run deploy`          | Deploy frontend to Cloudflare Workers (Alchemy — legacy)      |
+| `bun run destroy`         | Teardown Cloudflare Workers deployment (Alchemy — legacy)     |
 
 ## Code Generation
 
