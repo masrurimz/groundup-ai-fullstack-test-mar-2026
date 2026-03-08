@@ -576,6 +576,96 @@ export type GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses = {
   200: unknown;
 };
 
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/audio";
+};
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError =
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors[keyof GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors];
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/waveform";
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError =
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors[keyof GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors];
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: WaveformResponse;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse =
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses[keyof GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses];
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/spectrogram";
+};
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError =
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors[keyof GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors];
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
 export type GetMachinesApiV1LookupMachinesGetData = {
   body?: never;
   path?: never;

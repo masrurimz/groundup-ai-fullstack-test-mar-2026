@@ -11,6 +11,9 @@ import {
   getActionsApiV1LookupActionsGet,
   getAlertApiV1AlertsAlertIdGet,
   getAudioApiV1AlertsAlertIdAudioGet,
+  getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet,
+  getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet,
+  getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet,
   getMachinesApiV1LookupMachinesGet,
   getReasonsApiV1LookupReasonsGet,
   getSensorsApiV1LookupSensorsGet,
@@ -47,6 +50,13 @@ import type {
   GetAlertApiV1AlertsAlertIdGetResponse,
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetError,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetError,
   GetMachinesApiV1LookupMachinesGetResponse,
@@ -286,6 +296,90 @@ export const getSpectrogramApiV1AlertsAlertIdSpectrogramGetOptions = (
       return data;
     },
     queryKey: getSpectrogramApiV1AlertsAlertIdSpectrogramGetQueryKey(options),
+  });
+
+export const getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey = (
+  options: Options<GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData>,
+) => createQueryKey("getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet", options);
+
+/**
+ * Get Baseline Audio
+ */
+export const getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetOptions = (
+  options: Options<GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData>,
+) =>
+  queryOptions<
+    unknown,
+    GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError,
+    unknown,
+    ReturnType<typeof getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey(options),
+  });
+
+export const getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey = (
+  options: Options<GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData>,
+) => createQueryKey("getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet", options);
+
+/**
+ * Get Baseline Waveform
+ */
+export const getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetOptions = (
+  options: Options<GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData>,
+) =>
+  queryOptions<
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
+    ReturnType<typeof getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey(options),
+  });
+
+export const getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey = (
+  options: Options<GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData>,
+) => createQueryKey("getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet", options);
+
+/**
+ * Get Baseline Spectrogram
+ */
+export const getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetOptions = (
+  options: Options<GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData>,
+) =>
+  queryOptions<
+    unknown,
+    GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError,
+    unknown,
+    ReturnType<typeof getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey(options),
   });
 
 export const getMachinesApiV1LookupMachinesGetQueryKey = (

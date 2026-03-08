@@ -24,6 +24,15 @@ import type {
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetErrors,
   GetAudioApiV1AlertsAlertIdAudioGetResponses,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetResponses,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetResponses,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetErrors,
   GetMachinesApiV1LookupMachinesGetResponses,
@@ -160,6 +169,51 @@ export const getSpectrogramApiV1AlertsAlertIdSpectrogramGet = <
     GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors,
     ThrowOnError
   >({ url: "/api/v1/alerts/{alert_id}/spectrogram", ...options });
+
+/**
+ * Get Baseline Audio
+ */
+export const getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<
+    GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetResponses,
+    GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/alerts/{alert_id}/baseline/audio", ...options });
+
+/**
+ * Get Baseline Waveform
+ */
+export const getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses,
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/alerts/{alert_id}/baseline/waveform", ...options });
+
+/**
+ * Get Baseline Spectrogram
+ */
+export const getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<
+    GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData,
+    ThrowOnError
+  >,
+) =>
+  (options.client ?? client).get<
+    GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetResponses,
+    GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/alerts/{alert_id}/baseline/spectrogram", ...options });
 
 /**
  * Get Machines
