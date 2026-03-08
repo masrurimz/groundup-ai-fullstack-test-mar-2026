@@ -5,8 +5,17 @@ pre-commit:
   parallel: true
   jobs:
     - name: oxlint
+      glob: "*.{js,jsx,ts,tsx,cjs,mjs,json}"
       run: bun oxlint --fix {staged_files}
       stage_fixed: true
     - name: oxfmt
+      glob: "*.{js,jsx,ts,tsx,cjs,mjs,json,md,yml,yaml}"
       run: bun oxfmt --write {staged_files}
       stage_fixed: true
+    - name: ruff-format
+      glob: "apps/server/**/*.py"
+      run: uv run --directory apps/server ruff format app tests
+      stage_fixed: true
+    - name: ruff-check
+      glob: "apps/server/**/*.py"
+      run: uv run --directory apps/server ruff check app tests
