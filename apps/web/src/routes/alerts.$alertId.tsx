@@ -6,9 +6,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import ReactH5AudioPlayer, { RHAP_UI } from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
+import { LineChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
@@ -21,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Activity, AudioLines, Loader2 } from "lucide-react";
-
 import { getWaveformApiV1AlertsAlertIdWaveformGet, type WaveformResponse } from "../lib/api-client";
 import { getAlertAudioUrl, getAlertSpectrogramUrl } from "../lib/api/alert-assets";
 import { getApiClient } from "../lib/api/client";
@@ -150,7 +151,7 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
     <div className="min-w-0 overflow-hidden">
       <h3 className="mb-6 text-lg font-medium text-foreground">Anomaly Machine Output</h3>
       <AudioPlayer alertId={alertId} duration={waveform?.duration_seconds} />
-      <div className="mt-6 space-y-6 pl-12">
+      <div className="mt-6 space-y-6">
         <WaveformChart waveform={waveform} isLoading={waveformLoading} hasError={waveformError} />
         <SpectrogramImage alertId={alertId} />
       </div>
@@ -250,12 +251,9 @@ function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; dura
 }
 
 // ---------------------------------------------------------------------------
-// Waveform Chart – SVG rendered from real API data
+// Waveform Chart – shadcn/recharts
 // ---------------------------------------------------------------------------
 
-const WAVEFORM_WIDTH = 800;
-const WAVEFORM_HEIGHT = 192;
-const WAVEFORM_LABEL_TICKS = 7;
 const WAVEFORM_MIN_SPAN = 0.2;
 const WAVEFORM_PADDING_FACTOR = 0.08;
 
@@ -263,6 +261,13 @@ type WaveformBounds = {
   min: number;
   max: number;
 };
+
+const chartConfig = {
+  amplitude: {
+    label: "Amplitude",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig;
 
 function getWaveformBounds(amplitudes: number[]): WaveformBounds {
   const minAmp = Math.min(...amplitudes);
@@ -279,35 +284,14 @@ function getWaveformBounds(amplitudes: number[]): WaveformBounds {
   };
 }
 
-function buildWaveformPath(waveform: WaveformResponse, bounds: WaveformBounds): string {
-  const { times, amplitudes, duration_seconds } = waveform;
-  if (!times.length || !amplitudes.length) return "";
-
-  const len = Math.min(times.length, amplitudes.length);
-
-  // Downsample if too many points
-  const maxPoints = WAVEFORM_WIDTH;
-  const step = len > maxPoints ? Math.ceil(len / maxPoints) : 1;
-  const yRange = bounds.max - bounds.min;
-
-  const x = (t: number) => (t / duration_seconds) * WAVEFORM_WIDTH;
-  const y = (a: number) => {
-    const clamped = Math.max(bounds.min, Math.min(bounds.max, a));
-    return WAVEFORM_HEIGHT - ((clamped - bounds.min) / yRange) * WAVEFORM_HEIGHT;
-  };
-
-  const parts: string[] = [];
-  for (let i = 0; i < len; i += step) {
-    const cmd = i === 0 ? "M" : "L";
-    parts.push(cmd + x(times[i]!).toFixed(1) + " " + y(amplitudes[i]!).toFixed(1));
-  }
-
-  return parts.join(" ");
-}
-
 function formatAmplitudeLabel(value: number): string {
   return value.toFixed(2);
 }
+
+type WaveformPoint = {
+  time: number;
+  amplitude: number;
+};
 
 function WaveformChart({
   waveform,
@@ -326,68 +310,107 @@ function WaveformChart({
     return getWaveformBounds(waveform.amplitudes);
   }, [waveform]);
 
-  const path = useMemo(
-    () => (waveform ? buildWaveformPath(waveform, bounds) : ""),
-    [bounds, waveform],
-  );
+  const waveformData: WaveformPoint[] = useMemo(() => {
+    if (!waveform) return [];
 
-  const yAxisLabels = useMemo(() => {
-    const step = (bounds.max - bounds.min) / (WAVEFORM_LABEL_TICKS - 1);
-    return Array.from({ length: WAVEFORM_LABEL_TICKS }, (_, index) =>
-      formatAmplitudeLabel(bounds.max - step * index),
-    );
-  }, [bounds]);
+    const len = Math.min(waveform.times.length, waveform.amplitudes.length);
+    return Array.from({ length: len }, (_, index) => ({
+      time: waveform.times[index] ?? index / waveform.sample_rate,
+      amplitude: waveform.amplitudes[index] ?? 0,
+    }));
+  }, [waveform]);
 
-  const zeroBaselineY =
-    0 >= bounds.min && 0 <= bounds.max
-      ? WAVEFORM_HEIGHT - ((0 - bounds.min) / (bounds.max - bounds.min)) * WAVEFORM_HEIGHT
-      : null;
+  const showZeroBaseline = bounds.min <= 0 && bounds.max >= 0;
 
   return (
-    <div className="relative h-48 overflow-visible border-b border-l border-border">
-      <div className="absolute -left-12 bottom-0 top-0 flex w-10 flex-col items-end justify-between py-1 text-[10px] font-medium text-muted-foreground">
-        <span>AMP</span>
-        {yAxisLabels.map((label) => (
-          <span key={label}>{label}</span>
-        ))}
-      </div>
-
-      {isLoading ? (
+    <div className="h-48 rounded-md border border-border bg-card">
+      {/* Loading state */}
+      {isLoading && (
         <div className="flex h-full items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-      ) : hasError || !waveform ? (
+      )}
+
+      {/* Error state */}
+      {hasError && !isLoading && (
         <div className="flex h-full items-center justify-center">
           <p className="text-xs text-muted-foreground">Unable to load waveform data</p>
         </div>
-      ) : (
-        <svg
-          viewBox={"0 0 " + WAVEFORM_WIDTH + " " + WAVEFORM_HEIGHT}
-          preserveAspectRatio="none"
-          className="h-full w-full"
-        >
-          {/* Zero baseline */}
-          {zeroBaselineY !== null ? (
-            <line
-              x1="0"
-              y1={zeroBaselineY}
-              x2={WAVEFORM_WIDTH}
-              y2={zeroBaselineY}
-              stroke="currentColor"
-              className="text-border"
-              strokeWidth="0.5"
-              strokeDasharray="4 4"
+      )}
+
+      {/* Empty state */}
+      {!isLoading && !hasError && waveformData.length === 0 && (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-xs text-muted-foreground">No waveform samples available</p>
+        </div>
+      )}
+
+      {/* Chart */}
+      {!isLoading && !hasError && waveformData.length > 0 && (
+        <ChartContainer config={chartConfig} className="h-full w-full">
+          <LineChart
+            data={waveformData}
+            margin={{ top: 8, right: 12, bottom: 8, left: 8 }}
+            accessibilityLayer
+          >
+            <XAxis
+              dataKey="time"
+              type="number"
+              domain={[0, waveform?.duration_seconds ?? 0]}
+              hide
             />
-          ) : null}
-          {/* Waveform path */}
-          <path
-            d={path}
-            fill="none"
-            stroke="#3078a6"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+            <YAxis
+              width={40}
+              domain={[bounds.min, bounds.max]}
+              tickCount={7}
+              tickFormatter={formatAmplitudeLabel}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+            />
+            {showZeroBaseline && (
+              <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="4 4" />
+            )}
+            <ChartTooltip
+              cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const point = payload[0]?.payload as WaveformPoint | undefined;
+                const time = typeof label === "number" ? label : Number(point?.time ?? label);
+                const amplitude =
+                  typeof point?.amplitude === "number"
+                    ? point.amplitude
+                    : Number(payload[0]?.value);
+                if (!Number.isFinite(time) || !Number.isFinite(amplitude)) return null;
+                return (
+                  <div className="grid min-w-32 gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+                    <div className="font-medium">{time.toFixed(3)}s</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2.5 w-2.5 rounded-[2px]"
+                          style={{ backgroundColor: "var(--color-amplitude)" }}
+                        />
+                        <span className="text-muted-foreground">Amplitude</span>
+                      </div>
+                      <span className="font-mono font-medium tabular-nums text-foreground">
+                        {formatAmplitudeLabel(amplitude)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Line
+              dataKey="amplitude"
+              type="linear"
+              stroke="var(--color-amplitude)"
+              strokeWidth={1.25}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ChartContainer>
       )}
     </div>
   );
