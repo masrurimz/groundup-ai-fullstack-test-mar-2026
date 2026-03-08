@@ -14,6 +14,12 @@ from app.services.media import generate_spectrogram
 
 DEV_SEED_SOUND_CLIP = "dev-seed.wav"
 
+# Per-machine baseline WAV configs: machine_key -> (filename, frequency_hz, duration_seconds)
+_BASELINE_CONFIGS: dict[str, tuple[str, float, float]] = {
+    "cnc machine": ("baseline-cnc-machine.wav", 440.0, 4.0),
+    "milling machine": ("baseline-milling-machine.wav", 330.0, 5.0),
+}
+
 
 def _dataset_file() -> Path:
     return settings.DATASET_DIR / settings.DATASET_FILE
@@ -78,11 +84,34 @@ def copy_wav_files() -> None:
         destination = settings.AUDIO_DIR / wav_file.name
         if not destination.exists():
             shutil.copy2(wav_file, destination)
+    _create_baseline_wavs()
+
+
+def _create_baseline_wavs() -> None:
+    """Create baseline WAV files in AUDIO_DIR for each known machine config."""
+    settings.AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    for filename, freq, dur in _BASELINE_CONFIGS.values():
+        path = settings.AUDIO_DIR / filename
+        if not path.exists():
+            _create_baseline_wav(path, frequency_hz=freq, duration_seconds=dur)
 
 
 def _create_dev_seed_wav(
     path: Path, duration_seconds: float = 0.35, sample_rate: int = 16000
 ) -> None:
+    _create_baseline_wav(
+        path, frequency_hz=440.0, duration_seconds=duration_seconds, sample_rate=sample_rate
+    )
+
+
+def _create_baseline_wav(
+    path: Path,
+    frequency_hz: float = 440.0,
+    duration_seconds: float = 4.0,
+    sample_rate: int = 16000,
+    amplitude: float = 0.35,
+) -> None:
+    """Generate a clean sine-wave WAV representing normal machine operation."""
     n_samples = int(duration_seconds * sample_rate)
     path.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(path), "w") as wav_file:
@@ -90,7 +119,7 @@ def _create_dev_seed_wav(
         wav_file.setsampwidth(2)
         wav_file.setframerate(sample_rate)
         for i in range(n_samples):
-            sample = int(32767 * 0.35 * math.sin(2 * math.pi * 440 * i / sample_rate))
+            sample = int(32767 * amplitude * math.sin(2 * math.pi * frequency_hz * i / sample_rate))
             wav_file.writeframesraw(sample.to_bytes(2, byteorder="little", signed=True))
 
 
@@ -105,6 +134,14 @@ async def seed_lookup_data(session: AsyncSession) -> None:
     machine_by_name: dict[str, Machine] = {}
     for machine_name in machine_rows:
         machine_by_name[machine_name] = await _ensure_machine(session, machine_name)
+
+    # Set baseline sound clip for each machine if not already set
+    for machine_name, machine in machine_by_name.items():
+        key = _normalize_key(machine_name)
+        config = _BASELINE_CONFIGS.get(key)
+        if config is not None and machine.baseline_sound_clip is None:
+            machine.baseline_sound_clip = config[0]
+            session.add(machine)
 
     if reasons_existing is None:
         reasons_data = [
