@@ -1,24 +1,28 @@
 from .alerts import AlertListQuery, AlertResponse, AlertUpdateRequest, WaveformResponse
 from .lookup import (
     ActionCreateRequest,
+    ActionResponse,
     ActionUpdateRequest,
-    LookupItem,
     MachineCreateRequest,
+    MachineResponse,
     MachineUpdateRequest,
     ReasonCreateRequest,
+    ReasonResponse,
     ReasonUpdateRequest,
 )
 
 __all__ = [
     "ActionCreateRequest",
+    "ActionResponse",
     "ActionUpdateRequest",
     "AlertListQuery",
     "AlertResponse",
     "AlertUpdateRequest",
-    "LookupItem",
     "MachineCreateRequest",
+    "MachineResponse",
     "MachineUpdateRequest",
     "ReasonCreateRequest",
+    "ReasonResponse",
     "ReasonUpdateRequest",
     "WaveformResponse",
 ]
