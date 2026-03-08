@@ -125,7 +125,7 @@ export type LookupItem = {
   /**
    * Id
    */
-  id: string;
+  id: number;
   /**
    * Name
    */

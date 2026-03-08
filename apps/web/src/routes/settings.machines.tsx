@@ -158,7 +158,7 @@ function MachineRow({
   onToggle,
   isPending,
 }: {
-  machine: { id: string; name: string; is_active: boolean };
+  machine: { id: number; name: string; is_active: boolean };
   onToggle: () => void;
   isPending: boolean;
 }) {

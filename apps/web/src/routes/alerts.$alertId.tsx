@@ -106,7 +106,7 @@ function AlertDetailPage() {
           <BaselinePlaceholderPanel />
         </div>
 
-        <AlertEditForm alert={selectedAlert} />
+        <AlertEditForm key={selectedAlert.id} alert={selectedAlert} />
       </div>
     </section>
   );
@@ -453,7 +453,6 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
 
   const reasons = reasonsQuery.data ?? [];
   const actions = actionsQuery.data ?? [];
-  const lookupsLoading = reasonsQuery.isLoading || actionsQuery.isLoading;
 
   const reasonItems = useMemo(
     () => reasons.map((r) => ({ value: String(r.id), label: r.name })),
@@ -464,6 +463,47 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
     [actions],
   );
 
+  // Don't render form until lookups are loaded so defaultValues + items are ready together
+  if (reasonsQuery.isLoading || actionsQuery.isLoading) {
+    return (
+      <div className="space-y-8 pb-12">
+        <Skeleton className="h-6 w-32" />
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <AlertEditFormInner
+      alert={alert}
+      reasons={reasons}
+      actions={actions}
+      reasonItems={reasonItems}
+      actionItems={actionItems}
+      updateMutation={updateMutation}
+    />
+  );
+}
+
+function AlertEditFormInner({
+  alert,
+  reasons,
+  actions,
+  reasonItems,
+  actionItems,
+  updateMutation,
+}: {
+  alert: AlertView;
+  reasons: { id: number; name: string }[];
+  actions: { id: number; name: string }[];
+  reasonItems: { value: string; label: string }[];
+  actionItems: { value: string; label: string }[];
+  updateMutation: ReturnType<typeof useUpdateAlertMutation>;
+}) {
   const form = useForm({
     defaultValues: {
       suspected_reason_id:
@@ -482,15 +522,6 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
       });
     },
   });
-
-  useEffect(() => {
-    form.reset({
-      suspected_reason_id:
-        alert.suspected_reason_id != null ? String(alert.suspected_reason_id) : "",
-      action_id: alert.action_id != null ? String(alert.action_id) : "",
-      comment: alert.comment ?? "",
-    });
-  }, [alert.id, alert.suspected_reason_id, alert.action_id, alert.comment, form]);
 
   return (
     <form
@@ -515,17 +546,12 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
                 <FieldLabel htmlFor={field.name}>Suspected Reason</FieldLabel>
                 <Select
                   name={field.name}
-                  value={field.state.value}
+                  value={field.state.value || null}
                   onValueChange={(v) => field.handleChange(v ?? "")}
-                  disabled={lookupsLoading}
                   items={reasonItems}
                 >
                   <SelectTrigger id={field.name} aria-invalid={isInvalid} className="w-full">
-                    {lookupsLoading ? (
-                      <span className="text-muted-foreground">Loading…</span>
-                    ) : (
-                      <SelectValue placeholder="Select reason" />
-                    )}
+                    <SelectValue placeholder="Select reason" />
                   </SelectTrigger>
                   <SelectContent>
                     {reasons.map((r) => (
@@ -550,17 +576,12 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
                 <FieldLabel htmlFor={field.name}>Action Required</FieldLabel>
                 <Select
                   name={field.name}
-                  value={field.state.value}
+                  value={field.state.value || null}
                   onValueChange={(v) => field.handleChange(v ?? "")}
-                  disabled={lookupsLoading}
                   items={actionItems}
                 >
                   <SelectTrigger id={field.name} aria-invalid={isInvalid} className="w-full">
-                    {lookupsLoading ? (
-                      <span className="text-muted-foreground">Loading…</span>
-                    ) : (
-                      <SelectValue placeholder="Select action" />
-                    )}
+                    <SelectValue placeholder="Select action" />
                   </SelectTrigger>
                   <SelectContent>
                     {actions.map((a) => (
@@ -613,7 +634,7 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
           <Button
             type="submit"
             className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700"
-            disabled={!canSubmit || lookupsLoading}
+            disabled={!canSubmit}
           >
             {isSubmitting ? "Updating…" : "Update"}
           </Button>

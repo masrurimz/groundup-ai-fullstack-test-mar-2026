@@ -25,7 +25,7 @@ def _normalize_key(value: str) -> str:
 
 def _to_machine_item(machine: Machine) -> LookupItem:
     return LookupItem(
-        id=f"machine-{machine.id}",
+        id=machine.id,
         name=machine.name,
         category="machines",
         key=machine.key,
@@ -35,7 +35,7 @@ def _to_machine_item(machine: Machine) -> LookupItem:
 
 def _to_reason_item(reason: Reason, machine_name: str) -> LookupItem:
     return LookupItem(
-        id=f"reason-{reason.id}",
+        id=reason.id,
         name=reason.reason,
         category="reasons",
         key=reason.key,
@@ -47,7 +47,7 @@ def _to_reason_item(reason: Reason, machine_name: str) -> LookupItem:
 
 def _to_action_item(action: Action) -> LookupItem:
     return LookupItem(
-        id=f"action-{action.id}",
+        id=action.id,
         name=action.action,
         category="actions",
         key=action.key,

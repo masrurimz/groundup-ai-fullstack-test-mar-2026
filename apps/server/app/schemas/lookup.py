@@ -6,7 +6,7 @@ def _normalize_text(value: str) -> str:
 
 
 class LookupItem(BaseModel):
-    id: str
+    id: int
     name: str
     category: str
     key: str
