@@ -19,7 +19,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
@@ -33,10 +33,7 @@ export class ApiError extends Error {
  * @returns Parsed response data
  * @throws ApiError on non-2xx status or fetch failure
  */
-export async function apiRequest<T = unknown>(
-  path: string,
-  init?: RequestInit
-): Promise<T> {
+export async function apiRequest<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const url = `${getApiV1BaseUrl()}${path}`;
 
   try {
@@ -59,7 +56,7 @@ export async function apiRequest<T = unknown>(
       throw new ApiError(
         response.status,
         `API request failed: ${response.status} ${response.statusText}`,
-        errorData
+        errorData,
       );
     }
 
@@ -73,7 +70,10 @@ export async function apiRequest<T = unknown>(
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(0, `Network error: ${error instanceof Error ? error.message : String(error)}`);
+    throw new ApiError(
+      0,
+      `Network error: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -87,11 +87,7 @@ export function apiGet<T = unknown>(path: string, init?: RequestInit): Promise<T
 /**
  * Helper for POST requests
  */
-export function apiPost<T = unknown>(
-  path: string,
-  body?: unknown,
-  init?: RequestInit
-): Promise<T> {
+export function apiPost<T = unknown>(path: string, body?: unknown, init?: RequestInit): Promise<T> {
   return apiRequest<T>(path, {
     ...init,
     method: "POST",
@@ -102,11 +98,7 @@ export function apiPost<T = unknown>(
 /**
  * Helper for PUT requests
  */
-export function apiPut<T = unknown>(
-  path: string,
-  body?: unknown,
-  init?: RequestInit
-): Promise<T> {
+export function apiPut<T = unknown>(path: string, body?: unknown, init?: RequestInit): Promise<T> {
   return apiRequest<T>(path, {
     ...init,
     method: "PUT",
@@ -120,7 +112,7 @@ export function apiPut<T = unknown>(
 export function apiPatch<T = unknown>(
   path: string,
   body?: unknown,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T> {
   return apiRequest<T>(path, {
     ...init,
