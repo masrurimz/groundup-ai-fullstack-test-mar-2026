@@ -26,14 +26,17 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
     # Database Configuration
-    DATABASE_URL: str = "sqlite+aiosqlite:///./groundup.db"
+    DATABASE_URL: str = "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup"
 
     # Dataset and media assets
     DATASET_DIR: Path = Field(default=REPO_ROOT.parent / "extracted_data" / "Fullstack Test")
     DATASET_FILE: str = "Test Dataset.xlsx"
-    SERVER_DATA_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data")
-    AUDIO_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data" / "audio")
-    SPECTROGRAM_DIR: Path = Field(default=REPO_ROOT / "apps" / "server" / "data" / "spectrograms")
+    # S3-compatible storage (RustFS)
+    S3_ENDPOINT: str = ""
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_BUCKET: str = ""
+    S3_REGION: str = "us-east-1"
 
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"

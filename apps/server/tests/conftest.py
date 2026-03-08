@@ -1,14 +1,16 @@
 import math
+import shutil
 import wave
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.core.config import settings
+import app.services.storage as storage_module
 from app.core.db import get_session
 from app.main import app
 from app.models import Action, Alert, Base, Machine, Reason, Sensor
@@ -30,6 +32,50 @@ def _create_test_wav(
             wav_file.writeframesraw(value.to_bytes(2, byteorder="little", signed=True))
 
 
+class MockS3Storage:
+    def __init__(self, tmp_path: Path) -> None:
+        self._files: set[str] = set()
+        self._tmp_path = tmp_path
+        self._wav_path = tmp_path / "mock.wav"
+        _create_test_wav(self._wav_path)
+
+    def seed_key(self, key: str) -> None:
+        self._files.add(key)
+
+    def file_exists(self, key: str) -> bool:
+        return key in self._files
+
+    def upload_bytes(self, key: str, data: bytes, content_type: str) -> None:
+        self._files.add(key)
+
+    def upload_file(self, key: str, path: Path, content_type: str) -> None:
+        self._files.add(key)
+
+    def generate_presigned_url(self, key: str, expires_in: int = 3600) -> str:
+        return f"http://fake-s3/{key}"
+
+    def download_to_tempfile(self, key: str) -> Path:
+        dest = self._tmp_path / f"dl_{key.replace('/', '_')}"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(self._wav_path, dest)
+        return dest
+
+    async def async_file_exists(self, key: str) -> bool:
+        return key in self._files
+
+    async def async_generate_presigned_url(self, key: str, expires_in: int = 3600) -> str:
+        return f"http://fake-s3/{key}"
+
+    async def async_upload_bytes(self, key: str, data: bytes, content_type: str) -> None:
+        self._files.add(key)
+
+    async def async_download_to_tempfile(self, key: str) -> Path:
+        dest = self._tmp_path / f"dl_{key.replace('/', '_')}"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(self._wav_path, dest)
+        return dest
+
+
 @pytest.fixture
 async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -39,12 +85,8 @@ async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
         await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
 
-    audio_dir = tmp_path / "audio"
-    spectrogram_dir = tmp_path / "spectrograms"
-    _create_test_wav(audio_dir / "1.wav")
-
-    settings.AUDIO_DIR = audio_dir
-    settings.SPECTROGRAM_DIR = spectrogram_dir
+    mock_storage = MockS3Storage(tmp_path)
+    mock_storage.seed_key("audio/1.wav")
 
     async with session_factory() as session:
         cnc_machine = Machine(
@@ -164,7 +206,11 @@ async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+        with (
+            patch("app.api.routes.alerts.storage", mock_storage),
+            patch.object(storage_module, "storage", mock_storage),
+        ):
+            yield client
 
     app.dependency_overrides.clear()
     await engine.dispose()

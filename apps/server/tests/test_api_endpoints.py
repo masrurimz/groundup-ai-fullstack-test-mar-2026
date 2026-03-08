@@ -171,27 +171,13 @@ async def test_media_endpoints(test_client: AsyncClient) -> None:
     audio_response = await test_client.get(f"/api/v1/alerts/{alert_id}/audio")
     waveform_response = await test_client.get(f"/api/v1/alerts/{alert_id}/waveform")
 
-    assert audio_response.status_code == 200
-    assert audio_response.headers["content-type"] == "audio/wav"
+    assert audio_response.status_code == 302
+    assert audio_response.headers["location"].startswith("http://fake-s3/audio/")
     assert waveform_response.status_code == 200
     waveform_data = waveform_response.json()
     assert len(waveform_data["times"]) > 0
     assert len(waveform_data["times"]) == len(waveform_data["amplitudes"])
 
-
-async def test_audio_endpoint_supports_range_requests(test_client: AsyncClient) -> None:
-    alerts_response = await test_client.get("/api/v1/alerts")
-    alerts = alerts_response.json()
-    cnc_alert = next(a for a in alerts if a["machine"] == "CNC Machine")
-    alert_id = cnc_alert["id"]
-
-    range_response = await test_client.get(
-        f"/api/v1/alerts/{alert_id}/audio",
-        headers={"Range": "bytes=0-99"},
-    )
-
-    assert range_response.status_code == 206
-    assert range_response.headers["accept-ranges"] == "bytes"
-    assert range_response.headers["content-range"].startswith("bytes 0-99/")
-    assert range_response.headers["content-length"] == "100"
-    assert len(range_response.content) == 100
+    spectrogram_response = await test_client.get(f"/api/v1/alerts/{alert_id}/spectrogram")
+    assert spectrogram_response.status_code == 302
+    assert spectrogram_response.headers["location"].startswith("http://fake-s3/spectrograms/")

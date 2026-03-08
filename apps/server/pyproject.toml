@@ -17,6 +17,8 @@ dependencies = [
   "alembic>=1.15.0",
   "python-dotenv>=1.0.0",
   "aiofiles>=24.1.0",
+  "boto3>=1.38.0",
+
 ]
 
 [dependency-groups]
