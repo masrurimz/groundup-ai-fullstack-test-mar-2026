@@ -35,8 +35,10 @@ async def get_overview(
     alert_stats_sql = """
         SELECT
             COALESCE(SUM(alert_count), 0) AS total,
-            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'severe'), 0) AS critical,
-            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'moderate'), 0) AS warning,
+            COALESCE(SUM(alert_count)
+                FILTER (WHERE LOWER(anomaly_type) = 'severe'), 0) AS critical,
+            COALESCE(SUM(alert_count)
+                FILTER (WHERE LOWER(anomaly_type) = 'moderate'), 0) AS warning,
             COALESCE(SUM(GREATEST(0, alert_count - unresolved_count)), 0) AS resolved
         FROM alerts_hourly_stats
         WHERE bucket >= :since
@@ -130,8 +132,10 @@ async def get_machine_health(
             machine_id,
             COALESCE(SUM(alert_count), 0) AS total_alerts,
             COALESCE(SUM(unresolved_count), 0) AS active_alerts,
-            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'severe'), 0) AS critical_count,
-            COALESCE(SUM(alert_count) FILTER (WHERE anomaly_type = 'moderate'), 0) AS warning_count,
+            COALESCE(SUM(alert_count)
+                FILTER (WHERE LOWER(anomaly_type) = 'severe'), 0) AS critical_count,
+            COALESCE(SUM(alert_count)
+                FILTER (WHERE LOWER(anomaly_type) = 'moderate'), 0) AS warning_count,
             MAX(bucket) AS last_alert_at
         FROM alerts_hourly_stats
         GROUP BY machine_id
