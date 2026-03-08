@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --host 0.0.0.0 --port 3001",
+    "dev": "infisical run --domain https://infisical.zahid.es/api --env dev -- vite dev --host 0.0.0.0 --port 3001",
     "generate:routes": "bunx @tanstack/router-cli generate",
     "generate:client": "openapi-ts -f openapi-ts.config.ts",
     "build": "vite build",
