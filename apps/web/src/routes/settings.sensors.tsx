@@ -28,53 +28,55 @@ import {
 
 import {
   machinesQueryOptions,
-  reasonsQueryOptions,
-  useCreateReasonMutation,
-  useUpdateReasonMutation,
+  sensorsQueryOptions,
+  useCreateSensorMutation,
+  useUpdateSensorMutation,
 } from "../lib/query/options";
 
-export const Route = createFileRoute("/settings/reasons")({
+export const Route = createFileRoute("/settings/sensors")({
   loader: ({ context: { queryClient } }) => {
     void queryClient.ensureQueryData(machinesQueryOptions(false));
-    void queryClient.ensureQueryData(reasonsQueryOptions(undefined, true));
+    void queryClient.ensureQueryData(sensorsQueryOptions(undefined, true));
   },
-  component: ReasonsPage,
+  component: SensorsPage,
 });
 
 const createSchema = z.object({
   machine_id: z.string().min(1, "Select a machine"),
-  reason: z.string().min(1, "Reason text is required"),
+  serial: z.string().min(1, "Serial is required"),
+  name: z.string().min(1, "Name is required"),
 });
 
-function ReasonsPage() {
+function SensorsPage() {
   const machinesQuery = useQuery(machinesQueryOptions(false));
   const machines = machinesQuery.data ?? [];
 
   const [filterMachineId, setFilterMachineId] = useState<string | undefined>(undefined);
-  const reasonsQuery = useQuery(reasonsQueryOptions(filterMachineId, true));
+  const sensorsQuery = useQuery(sensorsQueryOptions(filterMachineId, true));
 
-  const createMutation = useCreateReasonMutation();
-  const updateMutation = useUpdateReasonMutation();
+  const createMutation = useCreateSensorMutation();
+  const updateMutation = useUpdateSensorMutation();
 
   const form = useForm({
-    defaultValues: { machine_id: undefined as string | undefined, reason: "" },
+    defaultValues: { machine_id: "" as string, serial: "", name: "" },
     validators: { onSubmit: createSchema },
     onSubmit: async ({ value, formApi }) => {
       await createMutation.mutateAsync({
-        machine_id: value.machine_id!,
-        reason: value.reason.trim(),
+        machine_id: value.machine_id,
+        serial: value.serial.trim(),
+        name: value.name.trim(),
       });
       formApi.reset();
     },
   });
 
-  const reasons = reasonsQuery.data ?? [];
+  const sensors = sensorsQuery.data ?? [];
 
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-800">Reasons</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Machine-scoped anomaly reason labels.</p>
+        <h1 className="text-xl font-semibold text-gray-800">Sensors</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Machine-scoped sensor hardware.</p>
       </div>
 
       {/* Create form */}
@@ -117,22 +119,46 @@ function ReasonsPage() {
           )}
         </form.Field>
 
-        <form.Field name="reason">
+        <form.Field name="serial">
           {(field) => (
             <Field
-              className="w-64"
+              className="w-48"
               data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
             >
-              <FieldLabel htmlFor={field.name}>Reason</FieldLabel>
+              <FieldLabel htmlFor={field.name}>Serial</FieldLabel>
               <Input
                 id={field.name}
                 name={field.name}
-                placeholder="Reason label"
+                placeholder="Sensor serial"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 disabled={form.state.isSubmitting}
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              />
+              <FieldError
+                errors={field.state.meta.errors.map((e) =>
+                  typeof e === "string" ? { message: e } : (e as { message?: string }),
+                )}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="name">
+          {(field) => (
+            <Field
+              className="w-48"
+              data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            >
+              <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+              <Input
+                id={field.name}
+                name={field.name}
+                placeholder="Sensor name"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                disabled={form.state.isSubmitting}
               />
               <FieldError
                 errors={field.state.meta.errors.map((e) =>
@@ -151,7 +177,7 @@ function ReasonsPage() {
               ) : (
                 <PlusCircle className="h-4 w-4" />
               )}
-              Add Reason
+              Add Sensor
             </Button>
           )}
         </form.Subscribe>
@@ -160,7 +186,7 @@ function ReasonsPage() {
           <p className="self-center text-sm text-red-500">Failed to add. Try again.</p>
         ) : null}
         {createMutation.isSuccess ? (
-          <p className="self-center text-sm text-emerald-600">Reason added.</p>
+          <p className="self-center text-sm text-emerald-600">Sensor added.</p>
         ) : null}
       </form>
 
@@ -168,7 +194,7 @@ function ReasonsPage() {
       <div className="mb-4 flex items-center gap-3">
         <span className="text-sm text-muted-foreground">Filter by machine:</span>
         <Select
-          value={filterMachineId != null ? filterMachineId : "__all__"}
+          value={filterMachineId || "__all__"}
           onValueChange={(v) => setFilterMachineId(v === "__all__" || !v ? undefined : v)}
         >
           <SelectTrigger className="w-44">
@@ -190,34 +216,36 @@ function ReasonsPage() {
       </div>
 
       {/* Table */}
-      {reasonsQuery.isLoading ? (
+      {sensorsQuery.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
-      ) : reasonsQuery.isError ? (
-        <p className="text-sm text-red-500">Failed to load reasons.</p>
-      ) : reasons.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No reasons yet. Add one above.</p>
+      ) : sensorsQuery.isError ? (
+        <p className="text-sm text-red-500">Failed to load sensors.</p>
+      ) : sensors.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No sensors yet. Add one above.</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Reason</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Serial</TableHead>
               <TableHead>Machine</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reasons.map((reason) => (
-              <TableRow key={reason.id} className={reason.is_active ? "" : "opacity-50"}>
-                <TableCell className="font-medium">{reason.reason}</TableCell>
+            {sensors.map((sensor) => (
+              <TableRow key={sensor.id} className={sensor.is_active ? "" : "opacity-50"}>
+                <TableCell className="font-medium">{sensor.name}</TableCell>
+                <TableCell>{sensor.serial}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {reason.machine_name ?? "—"}
+                  {sensor.machine_name ?? "—"}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={reason.is_active ? "default" : "secondary"}>
-                    {reason.is_active ? "Active" : "Inactive"}
+                  <Badge variant={sensor.is_active ? "default" : "secondary"}>
+                    {sensor.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -226,14 +254,14 @@ function ReasonsPage() {
                     size="sm"
                     onClick={() =>
                       updateMutation.mutate({
-                        reason_id: reason.id,
-                        body: { is_active: !reason.is_active },
+                        sensor_id: sensor.id,
+                        body: { is_active: !sensor.is_active },
                       })
                     }
                     disabled={updateMutation.isPending}
                     className="text-xs"
                   >
-                    {reason.is_active ? "Deactivate" : "Reactivate"}
+                    {sensor.is_active ? "Deactivate" : "Reactivate"}
                   </Button>
                 </TableCell>
               </TableRow>

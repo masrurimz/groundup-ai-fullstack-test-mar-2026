@@ -139,7 +139,7 @@ function MachinesPage() {
                 machine={machine}
                 onToggle={() =>
                   updateMutation.mutate({
-                    machine_id: Number(machine.id),
+                    machine_id: machine.id,
                     body: { is_active: !machine.is_active },
                   })
                 }
@@ -158,7 +158,7 @@ function MachineRow({
   onToggle,
   isPending,
 }: {
-  machine: { id: number; name: string; is_active: boolean };
+  machine: { id: string; name: string; is_active: boolean };
   onToggle: () => void;
   isPending: boolean;
 }) {

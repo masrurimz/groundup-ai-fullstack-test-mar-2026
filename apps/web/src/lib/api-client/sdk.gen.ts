@@ -12,6 +12,9 @@ import type {
   CreateReasonApiV1LookupReasonsPostData,
   CreateReasonApiV1LookupReasonsPostErrors,
   CreateReasonApiV1LookupReasonsPostResponses,
+  CreateSensorApiV1LookupSensorsPostData,
+  CreateSensorApiV1LookupSensorsPostErrors,
+  CreateSensorApiV1LookupSensorsPostResponses,
   GetActionsApiV1LookupActionsGetData,
   GetActionsApiV1LookupActionsGetErrors,
   GetActionsApiV1LookupActionsGetResponses,
@@ -27,6 +30,9 @@ import type {
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetErrors,
   GetReasonsApiV1LookupReasonsGetResponses,
+  GetSensorsApiV1LookupSensorsGetData,
+  GetSensorsApiV1LookupSensorsGetErrors,
+  GetSensorsApiV1LookupSensorsGetResponses,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses,
@@ -52,6 +58,9 @@ import type {
   UpdateReasonApiV1LookupReasonsReasonIdPatchData,
   UpdateReasonApiV1LookupReasonsReasonIdPatchErrors,
   UpdateReasonApiV1LookupReasonsReasonIdPatchResponses,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchData,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchErrors,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponses,
 } from "./types.gen";
 
 export type Options<
@@ -297,6 +306,56 @@ export const updateActionApiV1LookupActionsActionIdPatch = <ThrowOnError extends
     ThrowOnError
   >({
     url: "/api/v1/lookup/actions/{action_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get Sensors
+ */
+export const getSensorsApiV1LookupSensorsGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetSensorsApiV1LookupSensorsGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetSensorsApiV1LookupSensorsGetResponses,
+    GetSensorsApiV1LookupSensorsGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/lookup/sensors", ...options });
+
+/**
+ * Create Sensor
+ */
+export const createSensorApiV1LookupSensorsPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateSensorApiV1LookupSensorsPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    CreateSensorApiV1LookupSensorsPostResponses,
+    CreateSensorApiV1LookupSensorsPostErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/sensors",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update Sensor
+ */
+export const updateSensorApiV1LookupSensorsSensorIdPatch = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData, ThrowOnError>,
+) =>
+  (options.client ?? client).patch<
+    UpdateSensorApiV1LookupSensorsSensorIdPatchResponses,
+    UpdateSensorApiV1LookupSensorsSensorIdPatchErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/sensors/{sensor_id}",
     ...options,
     headers: {
       "Content-Type": "application/json",

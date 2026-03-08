@@ -147,7 +147,7 @@ function ActionsPage() {
                     size="sm"
                     onClick={() =>
                       updateMutation.mutate({
-                        action_id: Number(action.id),
+                        action_id: action.id,
                         body: { is_active: !action.is_active },
                       })
                     }

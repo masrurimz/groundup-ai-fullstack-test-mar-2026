@@ -7,11 +7,13 @@ import {
   createActionApiV1LookupActionsPost,
   createMachineApiV1LookupMachinesPost,
   createReasonApiV1LookupReasonsPost,
+  createSensorApiV1LookupSensorsPost,
   getActionsApiV1LookupActionsGet,
   getAlertApiV1AlertsAlertIdGet,
   getAudioApiV1AlertsAlertIdAudioGet,
   getMachinesApiV1LookupMachinesGet,
   getReasonsApiV1LookupReasonsGet,
+  getSensorsApiV1LookupSensorsGet,
   getSpectrogramApiV1AlertsAlertIdSpectrogramGet,
   getWaveformApiV1AlertsAlertIdWaveformGet,
   healthApiV1HealthGet,
@@ -22,6 +24,7 @@ import {
   updateAlertApiV1AlertsAlertIdPatch,
   updateMachineApiV1LookupMachinesMachineIdPatch,
   updateReasonApiV1LookupReasonsReasonIdPatch,
+  updateSensorApiV1LookupSensorsSensorIdPatch,
 } from "../sdk.gen";
 import type {
   CreateActionApiV1LookupActionsPostData,
@@ -33,6 +36,9 @@ import type {
   CreateReasonApiV1LookupReasonsPostData,
   CreateReasonApiV1LookupReasonsPostError,
   CreateReasonApiV1LookupReasonsPostResponse,
+  CreateSensorApiV1LookupSensorsPostData,
+  CreateSensorApiV1LookupSensorsPostError,
+  CreateSensorApiV1LookupSensorsPostResponse,
   GetActionsApiV1LookupActionsGetData,
   GetActionsApiV1LookupActionsGetError,
   GetActionsApiV1LookupActionsGetResponse,
@@ -47,6 +53,9 @@ import type {
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetError,
   GetReasonsApiV1LookupReasonsGetResponse,
+  GetSensorsApiV1LookupSensorsGetData,
+  GetSensorsApiV1LookupSensorsGetError,
+  GetSensorsApiV1LookupSensorsGetResponse,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetError,
   GetWaveformApiV1AlertsAlertIdWaveformGetData,
@@ -71,6 +80,9 @@ import type {
   UpdateReasonApiV1LookupReasonsReasonIdPatchData,
   UpdateReasonApiV1LookupReasonsReasonIdPatchError,
   UpdateReasonApiV1LookupReasonsReasonIdPatchResponse,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchData,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -512,6 +524,88 @@ export const updateActionApiV1LookupActionsActionIdPatchMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await updateActionApiV1LookupActionsActionIdPatch({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getSensorsApiV1LookupSensorsGetQueryKey = (
+  options?: Options<GetSensorsApiV1LookupSensorsGetData>,
+) => createQueryKey("getSensorsApiV1LookupSensorsGet", options);
+
+/**
+ * Get Sensors
+ */
+export const getSensorsApiV1LookupSensorsGetOptions = (
+  options?: Options<GetSensorsApiV1LookupSensorsGetData>,
+) =>
+  queryOptions<
+    GetSensorsApiV1LookupSensorsGetResponse,
+    GetSensorsApiV1LookupSensorsGetError,
+    GetSensorsApiV1LookupSensorsGetResponse,
+    ReturnType<typeof getSensorsApiV1LookupSensorsGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getSensorsApiV1LookupSensorsGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getSensorsApiV1LookupSensorsGetQueryKey(options),
+  });
+
+/**
+ * Create Sensor
+ */
+export const createSensorApiV1LookupSensorsPostMutation = (
+  options?: Partial<Options<CreateSensorApiV1LookupSensorsPostData>>,
+): UseMutationOptions<
+  CreateSensorApiV1LookupSensorsPostResponse,
+  CreateSensorApiV1LookupSensorsPostError,
+  Options<CreateSensorApiV1LookupSensorsPostData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateSensorApiV1LookupSensorsPostResponse,
+    CreateSensorApiV1LookupSensorsPostError,
+    Options<CreateSensorApiV1LookupSensorsPostData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createSensorApiV1LookupSensorsPost({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update Sensor
+ */
+export const updateSensorApiV1LookupSensorsSensorIdPatchMutation = (
+  options?: Partial<Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>>,
+): UseMutationOptions<
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+  Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
+    UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+    Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateSensorApiV1LookupSensorsSensorIdPatch({
         ...options,
         ...fnOptions,
         throwOnError: true,

@@ -8,248 +8,266 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as AlertsRouteImport } from './routes/alerts'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsIndexRouteImport } from './routes/settings.index'
-import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
-import { Route as SettingsReasonsRouteImport } from './routes/settings.reasons'
-import { Route as SettingsMachinesRouteImport } from './routes/settings.machines'
-import { Route as SettingsActionsRouteImport } from './routes/settings.actions'
-import { Route as AlertsAlertIdRouteImport } from './routes/alerts.$alertId'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SettingsRouteImport } from "./routes/settings";
+import { Route as AlertsRouteImport } from "./routes/alerts";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as SettingsIndexRouteImport } from "./routes/settings.index";
+import { Route as AlertsIndexRouteImport } from "./routes/alerts.index";
+import { Route as SettingsSensorsRouteImport } from "./routes/settings.sensors";
+import { Route as SettingsReasonsRouteImport } from "./routes/settings.reasons";
+import { Route as SettingsMachinesRouteImport } from "./routes/settings.machines";
+import { Route as SettingsActionsRouteImport } from "./routes/settings.actions";
+import { Route as AlertsAlertIdRouteImport } from "./routes/alerts.$alertId";
 
 const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AlertsRoute = AlertsRouteImport.update({
-  id: '/alerts',
-  path: '/alerts',
+  id: "/alerts",
+  path: "/alerts",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => SettingsRoute,
-} as any)
+} as any);
 const AlertsIndexRoute = AlertsIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => AlertsRoute,
-} as any)
+} as any);
+const SettingsSensorsRoute = SettingsSensorsRouteImport.update({
+  id: "/sensors",
+  path: "/sensors",
+  getParentRoute: () => SettingsRoute,
+} as any);
 const SettingsReasonsRoute = SettingsReasonsRouteImport.update({
-  id: '/reasons',
-  path: '/reasons',
+  id: "/reasons",
+  path: "/reasons",
   getParentRoute: () => SettingsRoute,
-} as any)
+} as any);
 const SettingsMachinesRoute = SettingsMachinesRouteImport.update({
-  id: '/machines',
-  path: '/machines',
+  id: "/machines",
+  path: "/machines",
   getParentRoute: () => SettingsRoute,
-} as any)
+} as any);
 const SettingsActionsRoute = SettingsActionsRouteImport.update({
-  id: '/actions',
-  path: '/actions',
+  id: "/actions",
+  path: "/actions",
   getParentRoute: () => SettingsRoute,
-} as any)
+} as any);
 const AlertsAlertIdRoute = AlertsAlertIdRouteImport.update({
-  id: '/$alertId',
-  path: '/$alertId',
+  id: "/$alertId",
+  path: "/$alertId",
   getParentRoute: () => AlertsRoute,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/alerts': typeof AlertsRouteWithChildren
-  '/settings': typeof SettingsRouteWithChildren
-  '/alerts/$alertId': typeof AlertsAlertIdRoute
-  '/settings/actions': typeof SettingsActionsRoute
-  '/settings/machines': typeof SettingsMachinesRoute
-  '/settings/reasons': typeof SettingsReasonsRoute
-  '/alerts/': typeof AlertsIndexRoute
-  '/settings/': typeof SettingsIndexRoute
+  "/": typeof IndexRoute;
+  "/alerts": typeof AlertsRouteWithChildren;
+  "/settings": typeof SettingsRouteWithChildren;
+  "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/settings/actions": typeof SettingsActionsRoute;
+  "/settings/machines": typeof SettingsMachinesRoute;
+  "/settings/reasons": typeof SettingsReasonsRoute;
+  "/settings/sensors": typeof SettingsSensorsRoute;
+  "/alerts/": typeof AlertsIndexRoute;
+  "/settings/": typeof SettingsIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/alerts/$alertId': typeof AlertsAlertIdRoute
-  '/settings/actions': typeof SettingsActionsRoute
-  '/settings/machines': typeof SettingsMachinesRoute
-  '/settings/reasons': typeof SettingsReasonsRoute
-  '/alerts': typeof AlertsIndexRoute
-  '/settings': typeof SettingsIndexRoute
+  "/": typeof IndexRoute;
+  "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/settings/actions": typeof SettingsActionsRoute;
+  "/settings/machines": typeof SettingsMachinesRoute;
+  "/settings/reasons": typeof SettingsReasonsRoute;
+  "/settings/sensors": typeof SettingsSensorsRoute;
+  "/alerts": typeof AlertsIndexRoute;
+  "/settings": typeof SettingsIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/alerts': typeof AlertsRouteWithChildren
-  '/settings': typeof SettingsRouteWithChildren
-  '/alerts/$alertId': typeof AlertsAlertIdRoute
-  '/settings/actions': typeof SettingsActionsRoute
-  '/settings/machines': typeof SettingsMachinesRoute
-  '/settings/reasons': typeof SettingsReasonsRoute
-  '/alerts/': typeof AlertsIndexRoute
-  '/settings/': typeof SettingsIndexRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/alerts": typeof AlertsRouteWithChildren;
+  "/settings": typeof SettingsRouteWithChildren;
+  "/alerts/$alertId": typeof AlertsAlertIdRoute;
+  "/settings/actions": typeof SettingsActionsRoute;
+  "/settings/machines": typeof SettingsMachinesRoute;
+  "/settings/reasons": typeof SettingsReasonsRoute;
+  "/settings/sensors": typeof SettingsSensorsRoute;
+  "/alerts/": typeof AlertsIndexRoute;
+  "/settings/": typeof SettingsIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/alerts'
-    | '/settings'
-    | '/alerts/$alertId'
-    | '/settings/actions'
-    | '/settings/machines'
-    | '/settings/reasons'
-    | '/alerts/'
-    | '/settings/'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/alerts"
+    | "/settings"
+    | "/alerts/$alertId"
+    | "/settings/actions"
+    | "/settings/machines"
+    | "/settings/reasons"
+    | "/settings/sensors"
+    | "/alerts/"
+    | "/settings/";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/alerts/$alertId'
-    | '/settings/actions'
-    | '/settings/machines'
-    | '/settings/reasons'
-    | '/alerts'
-    | '/settings'
+    | "/"
+    | "/alerts/$alertId"
+    | "/settings/actions"
+    | "/settings/machines"
+    | "/settings/reasons"
+    | "/settings/sensors"
+    | "/alerts"
+    | "/settings";
   id:
-    | '__root__'
-    | '/'
-    | '/alerts'
-    | '/settings'
-    | '/alerts/$alertId'
-    | '/settings/actions'
-    | '/settings/machines'
-    | '/settings/reasons'
-    | '/alerts/'
-    | '/settings/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/alerts"
+    | "/settings"
+    | "/alerts/$alertId"
+    | "/settings/actions"
+    | "/settings/machines"
+    | "/settings/reasons"
+    | "/settings/sensors"
+    | "/alerts/"
+    | "/settings/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AlertsRoute: typeof AlertsRouteWithChildren
-  SettingsRoute: typeof SettingsRouteWithChildren
+  IndexRoute: typeof IndexRoute;
+  AlertsRoute: typeof AlertsRouteWithChildren;
+  SettingsRoute: typeof SettingsRouteWithChildren;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alerts': {
-      id: '/alerts'
-      path: '/alerts'
-      fullPath: '/alerts'
-      preLoaderRoute: typeof AlertsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/': {
-      id: '/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/alerts/': {
-      id: '/alerts/'
-      path: '/'
-      fullPath: '/alerts/'
-      preLoaderRoute: typeof AlertsIndexRouteImport
-      parentRoute: typeof AlertsRoute
-    }
-    '/settings/reasons': {
-      id: '/settings/reasons'
-      path: '/reasons'
-      fullPath: '/settings/reasons'
-      preLoaderRoute: typeof SettingsReasonsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/machines': {
-      id: '/settings/machines'
-      path: '/machines'
-      fullPath: '/settings/machines'
-      preLoaderRoute: typeof SettingsMachinesRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/actions': {
-      id: '/settings/actions'
-      path: '/actions'
-      fullPath: '/settings/actions'
-      preLoaderRoute: typeof SettingsActionsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/alerts/$alertId': {
-      id: '/alerts/$alertId'
-      path: '/$alertId'
-      fullPath: '/alerts/$alertId'
-      preLoaderRoute: typeof AlertsAlertIdRouteImport
-      parentRoute: typeof AlertsRoute
-    }
+    "/settings": {
+      id: "/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/alerts": {
+      id: "/alerts";
+      path: "/alerts";
+      fullPath: "/alerts";
+      preLoaderRoute: typeof AlertsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/settings/": {
+      id: "/settings/";
+      path: "/";
+      fullPath: "/settings/";
+      preLoaderRoute: typeof SettingsIndexRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    "/alerts/": {
+      id: "/alerts/";
+      path: "/";
+      fullPath: "/alerts/";
+      preLoaderRoute: typeof AlertsIndexRouteImport;
+      parentRoute: typeof AlertsRoute;
+    };
+    "/settings/sensors": {
+      id: "/settings/sensors";
+      path: "/sensors";
+      fullPath: "/settings/sensors";
+      preLoaderRoute: typeof SettingsSensorsRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    "/settings/reasons": {
+      id: "/settings/reasons";
+      path: "/reasons";
+      fullPath: "/settings/reasons";
+      preLoaderRoute: typeof SettingsReasonsRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    "/settings/machines": {
+      id: "/settings/machines";
+      path: "/machines";
+      fullPath: "/settings/machines";
+      preLoaderRoute: typeof SettingsMachinesRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    "/settings/actions": {
+      id: "/settings/actions";
+      path: "/actions";
+      fullPath: "/settings/actions";
+      preLoaderRoute: typeof SettingsActionsRouteImport;
+      parentRoute: typeof SettingsRoute;
+    };
+    "/alerts/$alertId": {
+      id: "/alerts/$alertId";
+      path: "/$alertId";
+      fullPath: "/alerts/$alertId";
+      preLoaderRoute: typeof AlertsAlertIdRouteImport;
+      parentRoute: typeof AlertsRoute;
+    };
   }
 }
 
 interface AlertsRouteChildren {
-  AlertsAlertIdRoute: typeof AlertsAlertIdRoute
-  AlertsIndexRoute: typeof AlertsIndexRoute
+  AlertsAlertIdRoute: typeof AlertsAlertIdRoute;
+  AlertsIndexRoute: typeof AlertsIndexRoute;
 }
 
 const AlertsRouteChildren: AlertsRouteChildren = {
   AlertsAlertIdRoute: AlertsAlertIdRoute,
   AlertsIndexRoute: AlertsIndexRoute,
-}
+};
 
-const AlertsRouteWithChildren =
-  AlertsRoute._addFileChildren(AlertsRouteChildren)
+const AlertsRouteWithChildren = AlertsRoute._addFileChildren(AlertsRouteChildren);
 
 interface SettingsRouteChildren {
-  SettingsActionsRoute: typeof SettingsActionsRoute
-  SettingsMachinesRoute: typeof SettingsMachinesRoute
-  SettingsReasonsRoute: typeof SettingsReasonsRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
+  SettingsActionsRoute: typeof SettingsActionsRoute;
+  SettingsMachinesRoute: typeof SettingsMachinesRoute;
+  SettingsReasonsRoute: typeof SettingsReasonsRoute;
+  SettingsSensorsRoute: typeof SettingsSensorsRoute;
+  SettingsIndexRoute: typeof SettingsIndexRoute;
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsActionsRoute: SettingsActionsRoute,
   SettingsMachinesRoute: SettingsMachinesRoute,
   SettingsReasonsRoute: SettingsReasonsRoute,
+  SettingsSensorsRoute: SettingsSensorsRoute,
   SettingsIndexRoute: SettingsIndexRoute,
-}
+};
 
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(SettingsRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { createStart } from "@tanstack/react-start";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

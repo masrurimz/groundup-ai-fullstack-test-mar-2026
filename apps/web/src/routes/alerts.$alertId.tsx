@@ -95,7 +95,9 @@ function AlertDetailPage() {
     <section className="min-h-0 overflow-y-auto bg-card p-5 lg:p-8">
       <div className="mx-auto max-w-[1400px] pb-12">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-700">Alert ID #{selectedAlert.id}</h1>
+          <h1 className="text-2xl font-semibold text-gray-700">
+            Alert #{selectedAlert.serial_number}
+          </h1>
           <p className="mt-1 text-sm text-gray-400">
             Detected at {formatDateTime(selectedAlert.created_at)}
           </p>
@@ -130,7 +132,7 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
     getWaveformApiV1AlertsAlertIdWaveformGet({
       client: getApiClient(),
       throwOnError: true,
-      path: { alert_id: Number(alertId) },
+      path: { alert_id: alertId },
     })
       .then(({ data }) => {
         if (!cancelled) setWaveform(data);
@@ -472,17 +474,17 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
 
   const reasonsQuery = useQuery(reasonsQueryOptions(machineId));
   const actionsQuery = useQuery(actionsQueryOptions());
-  const updateMutation = useUpdateAlertMutation(Number(alert.id));
+  const updateMutation = useUpdateAlertMutation(alert.id);
 
   const reasons = reasonsQuery.data ?? [];
   const actions = actionsQuery.data ?? [];
 
   const reasonItems = useMemo(
-    () => reasons.map((r) => ({ value: String(r.id), label: r.reason })),
+    () => reasons.map((r) => ({ value: r.id, label: r.reason })),
     [reasons],
   );
   const actionItems = useMemo(
-    () => actions.map((a) => ({ value: String(a.id), label: a.action })),
+    () => actions.map((a) => ({ value: a.id, label: a.action })),
     [actions],
   );
 
@@ -521,17 +523,16 @@ function AlertEditFormInner({
   updateMutation,
 }: {
   alert: AlertView;
-  reasons: { id: number; reason: string }[];
-  actions: { id: number; action: string }[];
+  reasons: { id: string; reason: string }[];
+  actions: { id: string; action: string }[];
   reasonItems: { value: string; label: string }[];
   actionItems: { value: string; label: string }[];
   updateMutation: ReturnType<typeof useUpdateAlertMutation>;
 }) {
   const form = useForm({
     defaultValues: {
-      suspected_reason_id:
-        alert.suspected_reason_id != null ? String(alert.suspected_reason_id) : "",
-      action_id: alert.action_id != null ? String(alert.action_id) : "",
+      suspected_reason_id: alert.suspected_reason_id ?? "",
+      action_id: alert.action_id ?? "",
       comment: alert.comment ?? "",
     },
     validators: {
@@ -539,8 +540,8 @@ function AlertEditFormInner({
     },
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync({
-        suspected_reason_id: value.suspected_reason_id ? Number(value.suspected_reason_id) : null,
-        action_id: value.action_id ? Number(value.action_id) : null,
+        suspected_reason_id: value.suspected_reason_id || null,
+        action_id: value.action_id || null,
         comment: value.comment.trim() || null,
       });
     },
@@ -578,7 +579,7 @@ function AlertEditFormInner({
                   </SelectTrigger>
                   <SelectContent>
                     {reasons.map((r) => (
-                      <SelectItem key={r.id} value={String(r.id)}>
+                      <SelectItem key={r.id} value={r.id}>
                         {r.reason}
                       </SelectItem>
                     ))}
@@ -608,7 +609,7 @@ function AlertEditFormInner({
                   </SelectTrigger>
                   <SelectContent>
                     {actions.map((a) => (
-                      <SelectItem key={a.id} value={String(a.id)}>
+                      <SelectItem key={a.id} value={a.id}>
                         {a.action}
                       </SelectItem>
                     ))}

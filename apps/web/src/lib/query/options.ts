@@ -16,6 +16,8 @@ import {
   getMachinesApiV1LookupMachinesGetQueryKey,
   getReasonsApiV1LookupReasonsGetOptions,
   getReasonsApiV1LookupReasonsGetQueryKey,
+  getSensorsApiV1LookupSensorsGetOptions,
+  getSensorsApiV1LookupSensorsGetQueryKey,
   listAlertsApiV1AlertsGetOptions,
   listAlertsApiV1AlertsGetQueryKey,
 } from "../api-client/@tanstack/react-query.gen";
@@ -23,10 +25,12 @@ import {
   createActionApiV1LookupActionsPost,
   createMachineApiV1LookupMachinesPost,
   createReasonApiV1LookupReasonsPost,
+  createSensorApiV1LookupSensorsPost,
   updateActionApiV1LookupActionsActionIdPatch,
   updateAlertApiV1AlertsAlertIdPatch,
   updateMachineApiV1LookupMachinesMachineIdPatch,
   updateReasonApiV1LookupReasonsReasonIdPatch,
+  updateSensorApiV1LookupSensorsSensorIdPatch,
 } from "../api-client/sdk.gen";
 import type {
   ActionCreateRequest,
@@ -36,6 +40,8 @@ import type {
   MachineUpdateRequest,
   ReasonCreateRequest,
   ReasonUpdateRequest,
+  SensorCreateRequest,
+  SensorUpdateRequest,
 } from "../api-client";
 
 // ---------------------------------------------------------------------------
@@ -78,7 +84,7 @@ export function useUpdateMachineMutation() {
       machine_id,
       body,
     }: {
-      machine_id: number;
+      machine_id: string;
       body: MachineUpdateRequest;
     }) => {
       const { data } = await updateMachineApiV1LookupMachinesMachineIdPatch({
@@ -100,7 +106,7 @@ export function useUpdateMachineMutation() {
 // Reasons
 // ---------------------------------------------------------------------------
 
-export const reasonsQueryOptions = (machineId?: number, includeInactive = false) =>
+export const reasonsQueryOptions = (machineId?: string, includeInactive = false) =>
   getReasonsApiV1LookupReasonsGetOptions({
     query: {
       ...(machineId != null ? { machine_id: machineId } : {}),
@@ -129,7 +135,7 @@ export function useCreateReasonMutation() {
 export function useUpdateReasonMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ reason_id, body }: { reason_id: number; body: ReasonUpdateRequest }) => {
+    mutationFn: async ({ reason_id, body }: { reason_id: string; body: ReasonUpdateRequest }) => {
       const { data } = await updateReasonApiV1LookupReasonsReasonIdPatch({
         path: { reason_id },
         body,
@@ -140,6 +146,55 @@ export function useUpdateReasonMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: getReasonsApiV1LookupReasonsGetQueryKey(),
+      });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Sensors
+// ---------------------------------------------------------------------------
+
+export const sensorsQueryOptions = (machineId?: string, includeInactive = false) =>
+  getSensorsApiV1LookupSensorsGetOptions({
+    query: {
+      ...(machineId != null ? { machine_id: machineId } : {}),
+      ...(includeInactive ? { include_inactive: true } : {}),
+    },
+  });
+
+export function useCreateSensorMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: SensorCreateRequest) => {
+      const { data } = await createSensorApiV1LookupSensorsPost({
+        body,
+        throwOnError: true,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: getSensorsApiV1LookupSensorsGetQueryKey(),
+      });
+    },
+  });
+}
+
+export function useUpdateSensorMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sensor_id, body }: { sensor_id: string; body: SensorUpdateRequest }) => {
+      const { data } = await updateSensorApiV1LookupSensorsSensorIdPatch({
+        path: { sensor_id },
+        body,
+        throwOnError: true,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: getSensorsApiV1LookupSensorsGetQueryKey(),
       });
     },
   });
@@ -175,7 +230,7 @@ export function useCreateActionMutation() {
 export function useUpdateActionMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ action_id, body }: { action_id: number; body: ActionUpdateRequest }) => {
+    mutationFn: async ({ action_id, body }: { action_id: string; body: ActionUpdateRequest }) => {
       const { data } = await updateActionApiV1LookupActionsActionIdPatch({
         path: { action_id },
         body,
@@ -195,7 +250,7 @@ export function useUpdateActionMutation() {
 // Alert update mutation
 // ---------------------------------------------------------------------------
 
-export function useUpdateAlertMutation(alertId: number) {
+export function useUpdateAlertMutation(alertId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: AlertUpdateRequest) => {
