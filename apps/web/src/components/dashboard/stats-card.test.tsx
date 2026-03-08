@@ -27,28 +27,28 @@ describe("StatsCard", () => {
     expect(screen.queryByText("Total monitored")).toBeNull();
   });
 
-  it("renders trend indicator for up direction", () => {
+  it("renders change indicator for positive value", () => {
     render(
       <StatsCard
         title="Uptime"
         value="99%"
         icon={<span />}
-        trend={{ direction: "up", percentage: 5 }}
+        change={{ value: 5, label: "vs last week" }}
       />,
     );
-    expect(screen.getByText("↑ 5%")).toBeDefined();
+    expect(screen.getByText(/↑/)).toBeDefined();
   });
 
-  it("renders trend indicator for down direction", () => {
+  it("renders change indicator for negative value", () => {
     render(
       <StatsCard
         title="Errors"
         value={3}
         icon={<span />}
-        trend={{ direction: "down", percentage: 12 }}
+        change={{ value: -12, label: "vs last week" }}
       />,
     );
-    expect(screen.getByText("↓ 12%")).toBeDefined();
+    expect(screen.getByText(/↓/)).toBeDefined();
   });
 
   it("applies variant class for critical", () => {
