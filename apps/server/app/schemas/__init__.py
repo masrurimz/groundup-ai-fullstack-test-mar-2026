@@ -1,5 +1,5 @@
 from .alerts import AlertListQuery, AlertResponse, AlertUpdateRequest, WaveformResponse
-from .analytics import AlertTrendPoint, DashboardOverview, MachineHealthSummary
+from .analytics import AlertTrendBucket, DashboardOverview, MachineHealthSummary
 from .lookup import (
     ActionCreateRequest,
     ActionResponse,
@@ -21,7 +21,7 @@ __all__ = [
     "ActionUpdateRequest",
     "AlertListQuery",
     "AlertResponse",
-    "AlertTrendPoint",
+    "AlertTrendBucket",
     "AlertUpdateRequest",
     "DashboardOverview",
     "MachineCreateRequest",

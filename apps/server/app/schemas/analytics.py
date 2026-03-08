@@ -4,10 +4,12 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class AlertTrendPoint(BaseModel):
+class AlertTrendBucket(BaseModel):
     bucket: datetime
-    count: int
-    machine: str | None = None
+    critical: int
+    warning: int
+    mild: int
+    total: int
 
 
 class MachineHealthSummary(BaseModel):
@@ -26,4 +28,5 @@ class DashboardOverview(BaseModel):
     total_alerts_24h: int
     critical_alerts: int
     warning_alerts: int
+    mild_alerts: int
     resolved_rate: float  # 0.0-100.0

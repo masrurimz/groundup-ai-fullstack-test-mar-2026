@@ -1,7 +1,7 @@
 import io
 import math
 import wave
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -189,8 +189,21 @@ async def seed_alerts(session: AsyncSession) -> None:
     for machine_name in machine_rows:
         machine_by_name[machine_name] = await _ensure_machine(session, machine_name)
 
+    # Shift dataset timestamps (Aug 2021) to be recent.
+    # We compute a delta so the latest dataset timestamp lands on yesterday,
+    # preserving the relative ordering and time-of-day spread across all 6 rows.
+    raw_timestamps = [
+        datetime.fromtimestamp(int(row["Timestamp"]), tz=UTC) for _, row in df.iterrows()
+    ]
+    latest_original = max(raw_timestamps)
+    yesterday_midnight = datetime.now(tz=UTC).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ) - timedelta(days=1)
+    shift_delta = yesterday_midnight - latest_original
+
     for _, row in df.iterrows():
-        timestamp = datetime.fromtimestamp(int(row["Timestamp"]), tz=UTC)
+        original_ts = datetime.fromtimestamp(int(row["Timestamp"]), tz=UTC)
+        timestamp = original_ts + shift_delta
         machine_name = str(row["Machine"])
         serial = _normalize_sensor(row["Sensor"])
         sensor = await _ensure_sensor(session, machine_by_name[machine_name], serial)
@@ -248,32 +261,100 @@ async def seed_dev_data(session: AsyncSession) -> None:
         )
         storage.upload_bytes(dev_key, wav_bytes, "audio/wav")
 
-    machine = await _ensure_machine(session, "CNC Machine")
-    now = datetime.now(tz=UTC)
-    dev_sensors = {}
-    for i, _ in enumerate(["Mild", "Moderate", "Severe"], start=1):
-        serial = f"DEV-SENSOR-{i}"
-        dev_sensors[serial] = await _ensure_sensor(session, machine, serial)
+    cnc = await _ensure_machine(session, "CNC Machine")
+    milling = await _ensure_machine(session, "Milling Machine")
 
-    for index, anomaly in enumerate(["Mild", "Moderate", "Severe"], start=1):
-        session.add(
-            Alert(
-                timestamp=now,
-                machine="CNC Machine",
-                machine_id=machine.id,
-                anomaly_type=anomaly,
-                sensor=f"DEV-SENSOR-{index}",
-                sensor_id=dev_sensors[f"DEV-SENSOR-{index}"].id,
-                sound_clip=DEV_SEED_SOUND_CLIP,
-                suspected_reason=None,
-                suspected_reason_id=None,
-                action=None,
-                action_id=None,
-                comment="Seeded by seed:dev",
-                updated_at=None,
-                updated_by=None,
-            )
+    # Ensure sensors exist for both machines
+    cnc_sensor = await _ensure_sensor(session, cnc, "DEV-SENSOR-1")
+    milling_sensor = await _ensure_sensor(session, milling, "DEV-SENSOR-2")
+
+    # Look up Action and Reason records seeded by seed_lookup_data()
+    from app.models import Action, Reason  # noqa: PLC0415
+
+    def _action(name: str) -> "Action | None":
+        return action_map.get(_normalize_key(name))
+
+    def _reason(name: str) -> "Reason | None":
+        return reason_map.get(_normalize_key(name))
+
+    action_rows = (await session.execute(select(Action))).scalars().all()
+    action_map = {a.key: a for a in action_rows}
+    reason_rows = (await session.execute(select(Reason))).scalars().all()
+    reason_map = {r.key: r for r in reason_rows}
+
+    now = datetime.now(tz=UTC)
+
+    def _ts(days_ago: int, hour: int = 9) -> datetime:
+        return (now - timedelta(days=days_ago)).replace(
+            hour=hour, minute=0, second=0, microsecond=0
         )
+
+    def _alert(
+        machine: "Machine",
+        sensor: "Sensor",
+        machine_name: str,
+        anomaly: str,
+        ts: datetime,
+        action_name: str | None = None,
+        reason_name: str | None = None,
+    ) -> Alert:
+        act = _action(action_name) if action_name else None
+        rsn = _reason(reason_name) if reason_name else None
+        return Alert(
+            timestamp=ts,
+            machine=machine_name,
+            machine_id=machine.id,
+            anomaly_type=anomaly,
+            sensor=sensor.serial,
+            sensor_id=sensor.id,
+            sound_clip=DEV_SEED_SOUND_CLIP,
+            suspected_reason=rsn.reason if rsn else None,
+            suspected_reason_id=rsn.id if rsn else None,
+            action=act.action if act else None,
+            action_id=act.id if act else None,
+            comment="Seeded by seed:dev",
+            updated_at=ts if act else None,
+            updated_by="seed" if act else None,
+        )
+
+    # 18 alerts spread over ~13 days, 3 machines × severity levels, 3 resolved
+    alerts = [
+        # Day -13
+        _alert(cnc, cnc_sensor, "CNC Machine", "Mild", _ts(13, 8)),
+        _alert(milling, milling_sensor, "Milling Machine", "Moderate", _ts(13, 10)),
+        # Day -10
+        _alert(cnc, cnc_sensor, "CNC Machine", "Severe", _ts(10, 9), "Immediate", "Spindle Error"),
+        _alert(milling, milling_sensor, "Milling Machine", "Mild", _ts(10, 11)),
+        # Day -8
+        _alert(cnc, cnc_sensor, "CNC Machine", "Moderate", _ts(8, 7)),
+        _alert(milling, milling_sensor, "Milling Machine", "Severe", _ts(8, 14)),
+        # Day -6
+        _alert(cnc, cnc_sensor, "CNC Machine", "Mild", _ts(6, 8)),
+        _alert(cnc, cnc_sensor, "CNC Machine", "Moderate", _ts(6, 16)),
+        _alert(milling, milling_sensor, "Milling Machine", "Mild", _ts(6, 10)),
+        # Day -4
+        _alert(cnc, cnc_sensor, "CNC Machine", "Severe", _ts(4, 9), "Immediate", "Axis Problem"),
+        _alert(milling, milling_sensor, "Milling Machine", "Moderate", _ts(4, 13)),
+        # Day -2
+        _alert(cnc, cnc_sensor, "CNC Machine", "Mild", _ts(2, 8)),
+        _alert(
+            milling,
+            milling_sensor,
+            "Milling Machine",
+            "Severe",
+            _ts(2, 10),
+            "Later",
+            "Machine Crash",
+        ),
+        _alert(cnc, cnc_sensor, "CNC Machine", "Moderate", _ts(2, 15)),
+        # Day -1
+        _alert(cnc, cnc_sensor, "CNC Machine", "Severe", _ts(1, 9)),
+        _alert(milling, milling_sensor, "Milling Machine", "Mild", _ts(1, 10)),
+        _alert(milling, milling_sensor, "Milling Machine", "Moderate", _ts(1, 14)),
+        _alert(cnc, cnc_sensor, "CNC Machine", "Mild", _ts(1, 17)),
+    ]
+    for alert in alerts:
+        session.add(alert)
 
     await session.commit()
     await ensure_spectrograms(session)
