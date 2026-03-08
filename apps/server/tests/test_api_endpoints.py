@@ -7,7 +7,8 @@ async def test_list_alerts_returns_records(test_client: AsyncClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert data[0]["machine"] == "CNC Machine"
+    assert data[0]["machine"] == "Milling Machine"
+    assert data[0]["machine_id"] is not None
 
 
 async def test_list_alerts_filter_by_anomaly(test_client: AsyncClient) -> None:
@@ -20,9 +21,17 @@ async def test_list_alerts_filter_by_anomaly(test_client: AsyncClient) -> None:
 
 
 async def test_patch_alert_updates_fields(test_client: AsyncClient) -> None:
+    reasons_response = await test_client.get(
+        "/api/v1/lookup/reasons", params={"machine": "CNC Machine"}
+    )
+    actions_response = await test_client.get("/api/v1/lookup/actions")
+
+    reason_id = reasons_response.json()[0]["id"].split("-")[-1]
+    action_id = actions_response.json()[0]["id"].split("-")[-1]
+
     payload = {
-        "suspected_reason": "Spindle Error",
-        "action": "Immediate",
+        "suspected_reason_id": int(reason_id),
+        "action_id": int(action_id),
         "comment": "Operator verified",
     }
     response = await test_client.patch("/api/v1/alerts/1", json=payload)
@@ -39,11 +48,41 @@ async def test_lookup_endpoints(test_client: AsyncClient) -> None:
         "/api/v1/lookup/reasons", params={"machine": "CNC Machine"}
     )
     actions_response = await test_client.get("/api/v1/lookup/actions")
+    machines_response = await test_client.get("/api/v1/lookup/machines")
 
     assert reasons_response.status_code == 200
-    assert reasons_response.json() == ["Spindle Error"]
+    reasons = reasons_response.json()
+    assert len(reasons) == 1
+    assert reasons[0]["name"] == "Spindle Error"
+    assert reasons[0]["category"] == "reasons"
     assert actions_response.status_code == 200
-    assert actions_response.json() == ["Immediate", "Later"]
+    actions = actions_response.json()
+    assert len(actions) == 2
+    assert actions[0]["category"] == "actions"
+    assert machines_response.status_code == 200
+    machines = machines_response.json()
+    assert len(machines) == 2
+    assert machines[0]["category"] == "machines"
+
+
+async def test_lookup_create_and_update(test_client: AsyncClient) -> None:
+    created_machine = await test_client.post("/api/v1/lookup/machines", json={"name": " Lathe  A "})
+    assert created_machine.status_code == 201
+    machine_data = created_machine.json()
+    assert machine_data["name"] == "Lathe A"
+
+    machine_id = int(machine_data["id"].split("-")[-1])
+    updated_machine = await test_client.patch(
+        f"/api/v1/lookup/machines/{machine_id}",
+        json={"is_active": False},
+    )
+    assert updated_machine.status_code == 200
+    assert updated_machine.json()["is_active"] is False
+
+
+async def test_lookup_schema_validation_rejects_blank_values(test_client: AsyncClient) -> None:
+    response = await test_client.post("/api/v1/lookup/machines", json={"name": "   "})
+    assert response.status_code == 422
 
 
 async def test_media_endpoints(test_client: AsyncClient) -> None:
