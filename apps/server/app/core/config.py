@@ -1,7 +1,8 @@
+import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -16,7 +17,8 @@ class Settings(BaseSettings):
 
     # CORS Configuration
     CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
         "http://localhost:5173",
     ]
     CORS_ALLOW_CREDENTIALS: bool = True
@@ -24,7 +26,7 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
     # Database Configuration
-    DATABASE_URL: str = "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./groundup.db"
 
     # Dataset and media assets
     DATASET_DIR: Path = Field(default=REPO_ROOT.parent / "extracted_data" / "Fullstack Test")
@@ -36,7 +38,21 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, enable_decoding=False)
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: object) -> object:
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return []
+            if stripped.startswith("["):
+                return json.loads(stripped)
+            return [item.strip() for item in stripped.split(",") if item.strip()]
+        return value
 
 
 settings = Settings()

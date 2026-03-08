@@ -26,13 +26,20 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _resolve_database_url() -> str:
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not configured")
+    return url
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
     This configures the context with just a URL and not an Engine.
     Calls to context.execute() here emit the given string to the script output.
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = _resolve_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,12 +66,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode (async)."""
-    # Get database URL from config
-    url = config.get_main_option("sqlalchemy.url")
-
-    # Create async engine
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = url
+    url = _resolve_database_url()
 
     connectable = create_async_engine(
         url,
