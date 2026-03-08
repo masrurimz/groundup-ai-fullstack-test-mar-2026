@@ -19,7 +19,12 @@ A fullstack web application for monitoring industrial machine anomaly alerts. Op
 - [x] Contract-first API: OpenAPI spec, generated TypeScript client
 - [x] Audit log: append-only change history on every annotation and settings mutation
 - [x] Backend test suite (pytest)
+
 - [x] Frontend unit tests (vitest + testing-library)
+
+- [x] Alert resolution tracking: alerts are resolved when both an action and a suspected reason are assigned
+
+- [x] TimescaleDB continuous aggregates power real-time analytics (alert trends, machine health)
 
 ## Tech Stack
 
@@ -203,6 +208,30 @@ Currently deployed on a local server (GCP trial expired).
 | `bun run generate:client` | Regenerate OpenAPI TypeScript client from FastAPI spec        |
 | `bun run deploy`          | Deploy frontend to Cloudflare Workers (Alchemy — legacy)      |
 | `bun run destroy`         | Teardown Cloudflare Workers deployment (Alchemy — legacy)     |
+
+## CI / Quality Gates
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) triggers on:
+
+- **Push** to `main` or `master`
+- **Pull request** targeting `main` or `master`
+
+Concurrent runs for the same ref are cancelled — only the latest run proceeds.
+
+### Job graph
+
+```
+quality (Lint & Type Check)
+  ├─ oxlint                  frontend
+  ├─ tsc type check          frontend
+  ├─ ruff check              backend
+  └─ ty check                backend
+        │
+        ├─── test-frontend (bun test / Vitest)
+        └─── test-backend  (pytest + TimescaleDB pg17)
+```
+
+`test-frontend` and `test-backend` are gated on `quality` passing. A lint or type error blocks all tests. The two test jobs run in parallel once quality clears.
 
 ## Code Generation
 
