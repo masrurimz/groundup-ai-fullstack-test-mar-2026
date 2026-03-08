@@ -1,11 +1,9 @@
 import { Outlet, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useMemo } from "react";
 
-import { AlertsSidebar } from "@/components/alerts/alerts-sidebar";
+import { AlertsSidebar, type MachineStats } from "@/components/alerts/alerts-sidebar";
 
 import { useAlertsApi } from "../lib/api/use-alerts-api";
-
-const ALL_MACHINES = "__all__";
 
 export const Route = createFileRoute("/alerts")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -26,6 +24,19 @@ function AlertsLayout() {
 
   const machineOptions = useMemo(() => [...new Set(alerts.map((a) => a.machine))].sort(), [alerts]);
 
+  const machineStats: MachineStats[] = useMemo(() => {
+    const map = new Map<string, { alertCount: number; activeCount: number }>();
+    for (const alert of alerts) {
+      const stats = map.get(alert.machine) ?? { alertCount: 0, activeCount: 0 };
+      stats.alertCount += 1;
+      if (alert.status === "active") stats.activeCount += 1;
+      map.set(alert.machine, stats);
+    }
+    return [...map.entries()]
+      .map(([name, stats]) => ({ name, ...stats }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [alerts]);
+
   const filteredAlerts = useMemo(
     () => (machine ? alerts.filter((a) => a.machine === machine) : alerts),
     [alerts, machine],
@@ -36,11 +47,14 @@ function AlertsLayout() {
     [filteredAlerts],
   );
 
+  const handleSelectMachine = (name: string) => {
+    void navigate({ to: "/alerts", search: { machine: name } });
+  };
+
   const handleMachineChange = (value: string) => {
-    const next = value === ALL_MACHINES ? undefined : value;
     void navigate({
       to: "/alerts",
-      search: { machine: next },
+      search: { machine: value },
       replace: true,
     });
   };
@@ -49,7 +63,7 @@ function AlertsLayout() {
     if (alertId) {
       void navigate({ to: "/alerts", search: { machine } });
     } else {
-      void navigate({ to: "/" });
+      void navigate({ to: "/alerts", search: { machine: undefined } });
     }
   };
 
@@ -66,9 +80,11 @@ function AlertsLayout() {
       <AlertsSidebar
         alerts={filteredAlerts}
         selectedAlertId={alertId}
+        machineStats={machineStats}
         machineOptions={machineOptions}
-        selectedMachine={machine ?? ALL_MACHINES}
+        selectedMachine={machine}
         newAlertCount={newAlertCount}
+        onSelectMachine={handleSelectMachine}
         onMachineChange={handleMachineChange}
         onBack={handleBack}
         onSelectAlert={handleSelectAlert}

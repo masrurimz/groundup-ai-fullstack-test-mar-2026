@@ -1,7 +1,8 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -14,14 +15,20 @@ import {
 import { AlertListItem } from "./alert-list-item";
 import type { AlertItem } from "./types";
 
-const ALL_MACHINES = "__all__";
+export interface MachineStats {
+  name: string;
+  alertCount: number;
+  activeCount: number;
+}
 
 interface AlertsSidebarProps {
   alerts: AlertItem[];
   selectedAlertId?: string;
+  machineStats: MachineStats[];
   machineOptions: string[];
-  selectedMachine: string;
+  selectedMachine?: string;
   newAlertCount: number;
+  onSelectMachine: (machine: string) => void;
   onMachineChange: (machine: string) => void;
   onBack: () => void;
   onSelectAlert: (alertId: string) => void;
@@ -30,13 +37,96 @@ interface AlertsSidebarProps {
 export function AlertsSidebar({
   alerts,
   selectedAlertId,
+  machineStats,
+  machineOptions,
+  selectedMachine,
+  newAlertCount,
+  onSelectMachine,
+  onMachineChange,
+  onBack,
+  onSelectAlert,
+}: AlertsSidebarProps) {
+  if (!selectedMachine) {
+    return <MachineListPanel machineStats={machineStats} onSelectMachine={onSelectMachine} />;
+  }
+
+  return (
+    <AlertListPanel
+      alerts={alerts}
+      selectedAlertId={selectedAlertId}
+      machineOptions={machineOptions}
+      selectedMachine={selectedMachine}
+      newAlertCount={newAlertCount}
+      onMachineChange={onMachineChange}
+      onBack={onBack}
+      onSelectAlert={onSelectAlert}
+    />
+  );
+}
+
+function MachineListPanel({
+  machineStats,
+  onSelectMachine,
+}: {
+  machineStats: MachineStats[];
+  onSelectMachine: (machine: string) => void;
+}) {
+  const totalAlerts = machineStats.reduce((sum, m) => sum + m.alertCount, 0);
+
+  return (
+    <aside className="flex max-h-[45vh] min-h-0 flex-col border-b border-border bg-card lg:max-h-none lg:border-r lg:border-b-0">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">Machines</h2>
+        <p className="text-xs text-muted-foreground">{totalAlerts} total alerts</p>
+      </div>
+
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-2 p-3">
+          {machineStats.map((machine) => (
+            <Card key={machine.name} className="gap-0 py-0 transition-colors hover:border-gray-300">
+              <Button
+                variant="ghost"
+                onClick={() => onSelectMachine(machine.name)}
+                className="h-auto w-full cursor-pointer justify-between p-3 text-left"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{machine.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {machine.alertCount} alerts
+                    {machine.activeCount > 0 && (
+                      <span className="ml-1 text-blue-600">· {machine.activeCount} new</span>
+                    )}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Button>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    </aside>
+  );
+}
+
+function AlertListPanel({
+  alerts,
+  selectedAlertId,
   machineOptions,
   selectedMachine,
   newAlertCount,
   onMachineChange,
   onBack,
   onSelectAlert,
-}: AlertsSidebarProps) {
+}: {
+  alerts: AlertItem[];
+  selectedAlertId?: string;
+  machineOptions: string[];
+  selectedMachine: string;
+  newAlertCount: number;
+  onMachineChange: (machine: string) => void;
+  onBack: () => void;
+  onSelectAlert: (alertId: string) => void;
+}) {
   return (
     <aside className="flex max-h-[45vh] min-h-0 flex-col border-b border-border bg-card lg:max-h-none lg:border-r lg:border-b-0">
       {/* Machine Selector */}
@@ -51,7 +141,6 @@ export function AlertsSidebar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_MACHINES}>All Machines</SelectItem>
             {machineOptions.map((name) => (
               <SelectItem key={name} value={name}>
                 {name}
