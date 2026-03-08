@@ -8,11 +8,13 @@ from app.core.db import get_session
 from app.models import Action, AuditLog, Machine, Reason
 from app.schemas import (
     ActionCreateRequest,
+    ActionResponse,
     ActionUpdateRequest,
-    LookupItem,
     MachineCreateRequest,
+    MachineResponse,
     MachineUpdateRequest,
     ReasonCreateRequest,
+    ReasonResponse,
     ReasonUpdateRequest,
 )
 
@@ -23,34 +25,31 @@ def _normalize_key(value: str) -> str:
     return " ".join(value.strip().split()).lower()
 
 
-def _to_machine_item(machine: Machine) -> LookupItem:
-    return LookupItem(
+def _to_machine_response(machine: Machine) -> MachineResponse:
+    return MachineResponse(
         id=machine.id,
-        name=machine.name,
-        category="machines",
         key=machine.key,
+        name=machine.name,
         is_active=machine.is_active,
     )
 
 
-def _to_reason_item(reason: Reason, machine_name: str) -> LookupItem:
-    return LookupItem(
+def _to_reason_response(reason: Reason, machine_name: str) -> ReasonResponse:
+    return ReasonResponse(
         id=reason.id,
-        name=reason.reason,
-        category="reasons",
         key=reason.key,
+        reason=reason.reason,
         is_active=reason.is_active,
         machine_id=reason.machine_id,
         machine_name=machine_name,
     )
 
 
-def _to_action_item(action: Action) -> LookupItem:
-    return LookupItem(
+def _to_action_response(action: Action) -> ActionResponse:
+    return ActionResponse(
         id=action.id,
-        name=action.action,
-        category="actions",
         key=action.key,
+        action=action.action,
         is_active=action.is_active,
     )
 
@@ -77,69 +76,23 @@ async def _record_audit(
     )
 
 
-@router.get("", response_model=list[LookupItem])
-async def get_lookup_items(
-    category: str | None = None,
-    machine_id: int | None = None,
-    include_inactive: bool = False,
-    session: AsyncSession = Depends(get_session),
-) -> list[LookupItem]:
-    items: list[LookupItem] = []
-
-    include_machines = category in (None, "machines")
-    include_reasons = category in (None, "reasons")
-    include_actions = category in (None, "actions")
-
-    if include_machines:
-        query = select(Machine).order_by(Machine.name)
-        if not include_inactive:
-            query = query.where(Machine.is_active)
-        machines = (await session.execute(query)).scalars().all()
-        items.extend(_to_machine_item(machine) for machine in machines)
-
-    if include_reasons:
-        query = (
-            select(Reason, Machine.name)
-            .join(Machine, Reason.machine_id == Machine.id)
-            .order_by(Machine.name, Reason.reason)
-        )
-        conditions = []
-        if machine_id is not None:
-            conditions.append(Reason.machine_id == machine_id)
-        if not include_inactive:
-            conditions.append(and_(Reason.is_active, Machine.is_active))
-        if conditions:
-            query = query.where(and_(*conditions))
-        rows = (await session.execute(query)).all()
-        items.extend(_to_reason_item(reason, machine_name) for reason, machine_name in rows)
-
-    if include_actions:
-        query = select(Action).order_by(Action.action)
-        if not include_inactive:
-            query = query.where(Action.is_active)
-        actions = (await session.execute(query)).scalars().all()
-        items.extend(_to_action_item(action) for action in actions)
-
-    return items
-
-
-@router.get("/machines", response_model=list[LookupItem])
+@router.get("/machines", response_model=list[MachineResponse])
 async def get_machines(
     include_inactive: bool = False,
     session: AsyncSession = Depends(get_session),
-) -> list[LookupItem]:
+) -> list[MachineResponse]:
     query = select(Machine).order_by(Machine.name)
     if not include_inactive:
         query = query.where(Machine.is_active)
     machines = (await session.execute(query)).scalars().all()
-    return [_to_machine_item(machine) for machine in machines]
+    return [_to_machine_response(machine) for machine in machines]
 
 
-@router.post("/machines", response_model=LookupItem, status_code=status.HTTP_201_CREATED)
+@router.post("/machines", response_model=MachineResponse, status_code=status.HTTP_201_CREATED)
 async def create_machine(
     body: MachineCreateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> MachineResponse:
     name = body.name
     key = _normalize_key(body.name)
 
@@ -161,15 +114,15 @@ async def create_machine(
     )
     await session.commit()
     await session.refresh(machine)
-    return _to_machine_item(machine)
+    return _to_machine_response(machine)
 
 
-@router.patch("/machines/{machine_id}", response_model=LookupItem)
+@router.patch("/machines/{machine_id}", response_model=MachineResponse)
 async def update_machine(
     machine_id: int,
     body: MachineUpdateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> MachineResponse:
     machine = (
         await session.execute(select(Machine).where(Machine.id == machine_id))
     ).scalar_one_or_none()
@@ -204,16 +157,16 @@ async def update_machine(
     )
     await session.commit()
     await session.refresh(machine)
-    return _to_machine_item(machine)
+    return _to_machine_response(machine)
 
 
-@router.get("/reasons", response_model=list[LookupItem])
+@router.get("/reasons", response_model=list[ReasonResponse])
 async def get_reasons(
     machine_id: int | None = None,
     machine: str | None = None,
     include_inactive: bool = False,
     session: AsyncSession = Depends(get_session),
-) -> list[LookupItem]:
+) -> list[ReasonResponse]:
     query = (
         select(Reason, Machine.name)
         .join(Machine, Reason.machine_id == Machine.id)
@@ -234,14 +187,14 @@ async def get_reasons(
         query = query.where(and_(*conditions))
 
     rows = (await session.execute(query)).all()
-    return [_to_reason_item(reason, machine_name) for reason, machine_name in rows]
+    return [_to_reason_response(reason, machine_name) for reason, machine_name in rows]
 
 
-@router.post("/reasons", response_model=LookupItem, status_code=status.HTTP_201_CREATED)
+@router.post("/reasons", response_model=ReasonResponse, status_code=status.HTTP_201_CREATED)
 async def create_reason(
     body: ReasonCreateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> ReasonResponse:
     machine = (
         await session.execute(select(Machine).where(Machine.id == body.machine_id))
     ).scalar_one_or_none()
@@ -282,15 +235,15 @@ async def create_reason(
     )
     await session.commit()
     await session.refresh(reason)
-    return _to_reason_item(reason, machine.name)
+    return _to_reason_response(reason, machine.name)
 
 
-@router.patch("/reasons/{reason_id}", response_model=LookupItem)
+@router.patch("/reasons/{reason_id}", response_model=ReasonResponse)
 async def update_reason(
     reason_id: int,
     body: ReasonUpdateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> ReasonResponse:
     row = (
         await session.execute(
             select(Reason, Machine.name)
@@ -335,26 +288,26 @@ async def update_reason(
     )
     await session.commit()
     await session.refresh(reason)
-    return _to_reason_item(reason, machine_name)
+    return _to_reason_response(reason, machine_name)
 
 
-@router.get("/actions", response_model=list[LookupItem])
+@router.get("/actions", response_model=list[ActionResponse])
 async def get_actions(
     include_inactive: bool = False,
     session: AsyncSession = Depends(get_session),
-) -> list[LookupItem]:
+) -> list[ActionResponse]:
     query = select(Action).order_by(Action.action)
     if not include_inactive:
         query = query.where(Action.is_active)
     actions = (await session.execute(query)).scalars().all()
-    return [_to_action_item(action) for action in actions]
+    return [_to_action_response(action) for action in actions]
 
 
-@router.post("/actions", response_model=LookupItem, status_code=status.HTTP_201_CREATED)
+@router.post("/actions", response_model=ActionResponse, status_code=status.HTTP_201_CREATED)
 async def create_action(
     body: ActionCreateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> ActionResponse:
     action_name = body.action
     key = _normalize_key(body.action)
 
@@ -376,15 +329,15 @@ async def create_action(
     )
     await session.commit()
     await session.refresh(action)
-    return _to_action_item(action)
+    return _to_action_response(action)
 
 
-@router.patch("/actions/{action_id}", response_model=LookupItem)
+@router.patch("/actions/{action_id}", response_model=ActionResponse)
 async def update_action(
     action_id: int,
     body: ActionUpdateRequest,
     session: AsyncSession = Depends(get_session),
-) -> LookupItem:
+) -> ActionResponse:
     action = (
         await session.execute(select(Action).where(Action.id == action_id))
     ).scalar_one_or_none()
@@ -418,4 +371,4 @@ async def update_action(
     )
     await session.commit()
     await session.refresh(action)
-    return _to_action_item(action)
+    return _to_action_response(action)
