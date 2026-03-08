@@ -21,9 +21,6 @@ import type {
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetErrors,
   GetAudioApiV1AlertsAlertIdAudioGetResponses,
-  GetLookupItemsApiV1LookupGetData,
-  GetLookupItemsApiV1LookupGetErrors,
-  GetLookupItemsApiV1LookupGetResponses,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetErrors,
   GetMachinesApiV1LookupMachinesGetResponses,
@@ -154,18 +151,6 @@ export const getSpectrogramApiV1AlertsAlertIdSpectrogramGet = <
     GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors,
     ThrowOnError
   >({ url: "/api/v1/alerts/{alert_id}/spectrogram", ...options });
-
-/**
- * Get Lookup Items
- */
-export const getLookupItemsApiV1LookupGet = <ThrowOnError extends boolean = false>(
-  options?: Options<GetLookupItemsApiV1LookupGetData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<
-    GetLookupItemsApiV1LookupGetResponses,
-    GetLookupItemsApiV1LookupGetErrors,
-    ThrowOnError
-  >({ url: "/api/v1/lookup", ...options });
 
 /**
  * Get Machines

@@ -5,14 +5,27 @@ def _normalize_text(value: str) -> str:
     return " ".join(value.strip().split())
 
 
-class LookupItem(BaseModel):
+class MachineResponse(BaseModel):
     id: int
-    name: str
-    category: str
     key: str
+    name: str
     is_active: bool
-    machine_id: int | None = None
-    machine_name: str | None = None
+
+
+class ReasonResponse(BaseModel):
+    id: int
+    key: str
+    reason: str
+    is_active: bool
+    machine_id: int
+    machine_name: str
+
+
+class ActionResponse(BaseModel):
+    id: int
+    key: str
+    action: str
+    is_active: bool
 
 
 class MachineCreateRequest(BaseModel):

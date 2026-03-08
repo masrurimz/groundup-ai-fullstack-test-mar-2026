@@ -15,6 +15,28 @@ export type ActionCreateRequest = {
 };
 
 /**
+ * ActionResponse
+ */
+export type ActionResponse = {
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Key
+   */
+  key: string;
+  /**
+   * Action
+   */
+  action: string;
+  /**
+   * Is Active
+   */
+  is_active: boolean;
+};
+
+/**
  * ActionUpdateRequest
  */
 export type ActionUpdateRequest = {
@@ -119,40 +141,6 @@ export type HttpValidationError = {
 };
 
 /**
- * LookupItem
- */
-export type LookupItem = {
-  /**
-   * Id
-   */
-  id: number;
-  /**
-   * Name
-   */
-  name: string;
-  /**
-   * Category
-   */
-  category: string;
-  /**
-   * Key
-   */
-  key: string;
-  /**
-   * Is Active
-   */
-  is_active: boolean;
-  /**
-   * Machine Id
-   */
-  machine_id?: number | null;
-  /**
-   * Machine Name
-   */
-  machine_name?: string | null;
-};
-
-/**
  * MachineCreateRequest
  */
 export type MachineCreateRequest = {
@@ -160,6 +148,28 @@ export type MachineCreateRequest = {
    * Name
    */
   name: string;
+};
+
+/**
+ * MachineResponse
+ */
+export type MachineResponse = {
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Key
+   */
+  key: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Is Active
+   */
+  is_active: boolean;
 };
 
 /**
@@ -188,6 +198,36 @@ export type ReasonCreateRequest = {
    * Reason
    */
   reason: string;
+};
+
+/**
+ * ReasonResponse
+ */
+export type ReasonResponse = {
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Key
+   */
+  key: string;
+  /**
+   * Reason
+   */
+  reason: string;
+  /**
+   * Is Active
+   */
+  is_active: boolean;
+  /**
+   * Machine Id
+   */
+  machine_id: number;
+  /**
+   * Machine Name
+   */
+  machine_name: string;
 };
 
 /**
@@ -458,48 +498,6 @@ export type GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses = {
   200: unknown;
 };
 
-export type GetLookupItemsApiV1LookupGetData = {
-  body?: never;
-  path?: never;
-  query?: {
-    /**
-     * Category
-     */
-    category?: string | null;
-    /**
-     * Machine Id
-     */
-    machine_id?: number | null;
-    /**
-     * Include Inactive
-     */
-    include_inactive?: boolean;
-  };
-  url: "/api/v1/lookup";
-};
-
-export type GetLookupItemsApiV1LookupGetErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type GetLookupItemsApiV1LookupGetError =
-  GetLookupItemsApiV1LookupGetErrors[keyof GetLookupItemsApiV1LookupGetErrors];
-
-export type GetLookupItemsApiV1LookupGetResponses = {
-  /**
-   * Response Get Lookup Items Api V1 Lookup Get
-   *
-   * Successful Response
-   */
-  200: Array<LookupItem>;
-};
-
-export type GetLookupItemsApiV1LookupGetResponse =
-  GetLookupItemsApiV1LookupGetResponses[keyof GetLookupItemsApiV1LookupGetResponses];
-
 export type GetMachinesApiV1LookupMachinesGetData = {
   body?: never;
   path?: never;
@@ -528,7 +526,7 @@ export type GetMachinesApiV1LookupMachinesGetResponses = {
    *
    * Successful Response
    */
-  200: Array<LookupItem>;
+  200: Array<MachineResponse>;
 };
 
 export type GetMachinesApiV1LookupMachinesGetResponse =
@@ -555,7 +553,7 @@ export type CreateMachineApiV1LookupMachinesPostResponses = {
   /**
    * Successful Response
    */
-  201: LookupItem;
+  201: MachineResponse;
 };
 
 export type CreateMachineApiV1LookupMachinesPostResponse =
@@ -587,7 +585,7 @@ export type UpdateMachineApiV1LookupMachinesMachineIdPatchResponses = {
   /**
    * Successful Response
    */
-  200: LookupItem;
+  200: MachineResponse;
 };
 
 export type UpdateMachineApiV1LookupMachinesMachineIdPatchResponse =
@@ -629,7 +627,7 @@ export type GetReasonsApiV1LookupReasonsGetResponses = {
    *
    * Successful Response
    */
-  200: Array<LookupItem>;
+  200: Array<ReasonResponse>;
 };
 
 export type GetReasonsApiV1LookupReasonsGetResponse =
@@ -656,7 +654,7 @@ export type CreateReasonApiV1LookupReasonsPostResponses = {
   /**
    * Successful Response
    */
-  201: LookupItem;
+  201: ReasonResponse;
 };
 
 export type CreateReasonApiV1LookupReasonsPostResponse =
@@ -688,7 +686,7 @@ export type UpdateReasonApiV1LookupReasonsReasonIdPatchResponses = {
   /**
    * Successful Response
    */
-  200: LookupItem;
+  200: ReasonResponse;
 };
 
 export type UpdateReasonApiV1LookupReasonsReasonIdPatchResponse =
@@ -722,7 +720,7 @@ export type GetActionsApiV1LookupActionsGetResponses = {
    *
    * Successful Response
    */
-  200: Array<LookupItem>;
+  200: Array<ActionResponse>;
 };
 
 export type GetActionsApiV1LookupActionsGetResponse =
@@ -749,7 +747,7 @@ export type CreateActionApiV1LookupActionsPostResponses = {
   /**
    * Successful Response
    */
-  201: LookupItem;
+  201: ActionResponse;
 };
 
 export type CreateActionApiV1LookupActionsPostResponse =
@@ -781,7 +779,7 @@ export type UpdateActionApiV1LookupActionsActionIdPatchResponses = {
   /**
    * Successful Response
    */
-  200: LookupItem;
+  200: ActionResponse;
 };
 
 export type UpdateActionApiV1LookupActionsActionIdPatchResponse =

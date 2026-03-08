@@ -135,7 +135,7 @@ function ActionsPage() {
           <TableBody>
             {actions.map((action) => (
               <TableRow key={action.id} className={action.is_active ? "" : "opacity-50"}>
-                <TableCell className="font-medium">{action.name}</TableCell>
+                <TableCell className="font-medium">{action.action}</TableCell>
                 <TableCell>
                   <Badge variant={action.is_active ? "default" : "secondary"}>
                     {action.is_active ? "Active" : "Inactive"}

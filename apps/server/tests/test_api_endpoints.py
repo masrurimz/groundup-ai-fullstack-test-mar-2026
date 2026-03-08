@@ -27,12 +27,12 @@ async def test_patch_alert_updates_fields(test_client: AsyncClient) -> None:
     )
     actions_response = await test_client.get("/api/v1/lookup/actions")
 
-    reason_id = reasons_response.json()[0]["id"].split("-")[-1]
-    action_id = actions_response.json()[0]["id"].split("-")[-1]
+    reason_id = reasons_response.json()[0]["id"]
+    action_id = actions_response.json()[0]["id"]
 
     payload = {
-        "suspected_reason_id": int(reason_id),
-        "action_id": int(action_id),
+        "suspected_reason_id": reason_id,
+        "action_id": action_id,
         "comment": "Operator verified",
     }
     response = await test_client.patch("/api/v1/alerts/1", json=payload)
@@ -54,16 +54,17 @@ async def test_lookup_endpoints(test_client: AsyncClient) -> None:
     assert reasons_response.status_code == 200
     reasons = reasons_response.json()
     assert len(reasons) == 1
-    assert reasons[0]["name"] == "Spindle Error"
-    assert reasons[0]["category"] == "reasons"
+    assert reasons[0]["reason"] == "Spindle Error"
+    assert reasons[0]["machine_id"] is not None
+    assert reasons[0]["machine_name"] == "CNC Machine"
     assert actions_response.status_code == 200
     actions = actions_response.json()
     assert len(actions) == 2
-    assert actions[0]["category"] == "actions"
+    assert "key" in actions[0]
     assert machines_response.status_code == 200
     machines = machines_response.json()
     assert len(machines) == 2
-    assert machines[0]["category"] == "machines"
+    assert "key" in machines[0]
 
 
 async def test_lookup_create_and_update(test_client: AsyncClient) -> None:
@@ -72,7 +73,7 @@ async def test_lookup_create_and_update(test_client: AsyncClient) -> None:
     machine_data = created_machine.json()
     assert machine_data["name"] == "Lathe A"
 
-    machine_id = int(machine_data["id"].split("-")[-1])
+    machine_id = machine_data["id"]
     updated_machine = await test_client.patch(
         f"/api/v1/lookup/machines/{machine_id}",
         json={"is_active": False},
