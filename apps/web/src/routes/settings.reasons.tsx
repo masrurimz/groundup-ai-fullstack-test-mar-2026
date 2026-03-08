@@ -212,7 +212,7 @@ function ReasonsPage() {
           <TableBody>
             {reasons.map((reason) => (
               <TableRow key={reason.id} className={reason.is_active ? "" : "opacity-50"}>
-                <TableCell className="font-medium">{reason.name}</TableCell>
+                <TableCell className="font-medium">{reason.reason}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {reason.machine_name ?? "—"}
                 </TableCell>

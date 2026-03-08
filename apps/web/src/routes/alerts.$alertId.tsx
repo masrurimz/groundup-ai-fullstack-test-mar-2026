@@ -455,11 +455,11 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
   const actions = actionsQuery.data ?? [];
 
   const reasonItems = useMemo(
-    () => reasons.map((r) => ({ value: String(r.id), label: r.name })),
+    () => reasons.map((r) => ({ value: String(r.id), label: r.reason })),
     [reasons],
   );
   const actionItems = useMemo(
-    () => actions.map((a) => ({ value: String(a.id), label: a.name })),
+    () => actions.map((a) => ({ value: String(a.id), label: a.action })),
     [actions],
   );
 
@@ -498,8 +498,8 @@ function AlertEditFormInner({
   updateMutation,
 }: {
   alert: AlertView;
-  reasons: { id: number; name: string }[];
-  actions: { id: number; name: string }[];
+  reasons: { id: number; reason: string }[];
+  actions: { id: number; action: string }[];
   reasonItems: { value: string; label: string }[];
   actionItems: { value: string; label: string }[];
   updateMutation: ReturnType<typeof useUpdateAlertMutation>;
@@ -556,7 +556,7 @@ function AlertEditFormInner({
                   <SelectContent>
                     {reasons.map((r) => (
                       <SelectItem key={r.id} value={String(r.id)}>
-                        {r.name}
+                        {r.reason}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -586,7 +586,7 @@ function AlertEditFormInner({
                   <SelectContent>
                     {actions.map((a) => (
                       <SelectItem key={a.id} value={String(a.id)}>
-                        {a.name}
+                        {a.action}
                       </SelectItem>
                     ))}
                   </SelectContent>
