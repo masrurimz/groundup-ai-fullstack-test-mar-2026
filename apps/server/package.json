@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "infisical run --domain https://infisical.zahid.es/api --env dev -- uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000",
+    "db:reset": "docker exec groundup-ai-fullstack-test-mar-2026-timescaledb-1 psql -U groundup -d groundup -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && docker exec groundup-ai-fullstack-test-mar-2026-timescaledb-1 psql -U groundup -d groundup -c 'CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;' && uv run alembic upgrade head",
     "db:migrate": "uv run alembic upgrade head",
     "seed": "uv run python -m app.scripts.seed",
     "seed:dev": "uv run python -m app.scripts.seed_dev",
