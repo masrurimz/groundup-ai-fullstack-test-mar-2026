@@ -37,7 +37,7 @@ A fullstack web application for monitoring industrial machine anomaly alerts. Op
 
 ## Architecture Overview
 
-The frontend (TanStack Start, SSR) communicates with a FastAPI backend over HTTP. The backend persists relational and time-series data in PostgreSQL with TimescaleDB hypertables, and stores all binary assets (audio WAVs, spectrogram PNGs, waveform JSON) in RustFS — an S3-compatible object store. Audio and spectrograms are served via presigned S3 redirect URLs; waveform data goes through a three-tier cache before reaching the client.
+The frontend (TanStack Start, SSR) communicates with a FastAPI backend over HTTP. The backend persists relational data (alerts, machines, reasons, actions) in PostgreSQL; the `audit_log` table uses a TimescaleDB hypertable for append-only mutation history with automatic compression on cold rows. All binary assets (audio WAVs, spectrogram PNGs, waveform JSON) are stored in RustFS — an S3-compatible object store. Audio and spectrograms are served via presigned S3 redirect URLs; waveform data goes through a three-tier cache before reaching the client.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full data model, API surface, and component map.
 
@@ -45,7 +45,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full data model, API 
 
 - **TanStack Start over Next.js** — edge SSR with file-based routing and first-class TanStack Query integration; no framework lock-in for signal processing-heavy data flows
 - **FastAPI + librosa** — Python's signal processing ecosystem (librosa, numpy, scipy) is the natural choice for audio analysis; EE background informs mel spectrogram parameter selection (fmax=8 kHz, 128 mel bins)
-- **PostgreSQL + TimescaleDB** — time-series anomaly data benefits from TimescaleDB hypertables; `audit_log` uses automatic compression on cold rows, reducing storage cost for the append-only history
+- **PostgreSQL + TimescaleDB** — relational data (alerts, machines, reasons, actions) lives in PostgreSQL; the `audit_log` table is a TimescaleDB hypertable with automatic compression on cold rows, reducing storage cost for the append-only history
 - **Three-tier waveform cache** — hot path: in-memory dict (zero I/O); warm path: pre-computed JSON in S3 (one network round-trip); cold path: librosa computation + S3 upload; subsequent requests never recompute
 - **Contract-first API** — FastAPI generates the OpenAPI spec; TypeScript client is generated via hey-api; CI verifies the client is in sync; no client/server drift
 - **S3/RustFS object storage** — binary assets are decoupled from the app server; audio and spectrograms are served via presigned redirect (no proxy buffering)
@@ -190,7 +190,7 @@ Currently deployed on a local server (GCP trial expired).
 | `bun run seed:dev`        | As above + dev-only sample alerts                         |
 | `bun run check`           | Run Oxlint + Oxfmt (lint and format fix)                  |
 | `bun run check:types`     | TypeScript type check (all apps)                          |
-| `bun run generate-client` | Regenerate OpenAPI TypeScript client from FastAPI spec    |
+| `bun run generate:client` | Regenerate OpenAPI TypeScript client from FastAPI spec    |
 | `bun run deploy`          | Deploy frontend to Cloudflare Workers (Alchemy — legacy)  |
 | `bun run destroy`         | Teardown Cloudflare Workers deployment (Alchemy — legacy) |
 
@@ -199,10 +199,10 @@ Currently deployed on a local server (GCP trial expired).
 The TypeScript API client (`apps/web/src/lib/api-client/`) is auto-generated from the FastAPI OpenAPI spec. Regenerate after backend schema changes:
 
 ```bash
-bun run generate-client
+bun run generate:client
 ```
 
-CI verifies the generated client is in sync via `bun run verify-generated-client`.
+CI verifies the generated client is in sync via `bun run verify:generated:client`.
 
 ## Database Migrations
 
