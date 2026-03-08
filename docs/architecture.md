@@ -13,8 +13,11 @@ Browser
               └── OpenAPI client (generated from FastAPI spec)
                     └── FastAPI (Python 3.13, async)
                           └── SQLAlchemy async
-                                └── SQLite (dev) / PostgreSQL (prod)
+                                └── PostgreSQL + TimescaleDB
+                                └── S3-compatible RustFS (audio, waveform, spectrogram)
 ```
+
+Audio files, waveform JSON, and spectrogram images are stored in S3-compatible RustFS object storage. Audio and spectrogram endpoints serve presigned redirect URLs. Waveform data is resolved through a three-tier cache (in-memory → S3 JSON → compute from WAV).
 
 ## Data Model
 
@@ -22,49 +25,66 @@ Browser
 
 The primary entity. Represents a single anomaly detection event from a machine sensor.
 
-| Column                | Type             | Description                                                  |
-| --------------------- | ---------------- | ------------------------------------------------------------ |
-| `id`                  | int PK           |                                                              |
-| `timestamp`           | datetime (tz)    | When the anomaly was detected                                |
-| `machine`             | string           | Machine name snapshot (denormalized for history)             |
-| `machine_id`          | int FK → Machine | Resolved machine reference (nullable, added in v2)           |
-| `anomaly_type`        | string           | Classification of the anomaly                                |
-| `sensor`              | string           | Sensor that captured the event                               |
-| `sound_clip`          | string           | Filename of the associated WAV file                          |
-| `suspected_reason`    | text             | Reason text snapshot (denormalized)                          |
-| `suspected_reason_id` | int FK → Reason  | Resolved reason (nullable)                                   |
-| `action`              | text             | Action text snapshot (denormalized)                          |
-| `action_id`           | int FK → Action  | Resolved action (nullable)                                   |
-| `comment`             | text             | Free-text operator note                                      |
-| `updated_at`          | datetime (tz)    | Last annotation timestamp                                    |
-| `updated_by`          | string           | Actor who last annotated (currently hardcoded to `admin-ui`) |
+| Column                | Type              | Description                                                  |
+| --------------------- | ----------------- | ------------------------------------------------------------ |
+| `id`                  | uuid PK           |                                                              |
+| `serial_number`       | int (identity)    | Auto-incrementing display number                             |
+| `timestamp`           | datetime (tz)     | When the anomaly was detected                                |
+| `machine`             | string            | Machine name snapshot (denormalized for history)             |
+| `machine_id`          | uuid FK → Machine | Resolved machine reference (nullable)                        |
+| `anomaly_type`        | string            | Classification of the anomaly                                |
+| `sensor`              | string            | Sensor name snapshot (denormalized for history)              |
+| `sensor_id`           | uuid FK → Sensor  | Resolved sensor reference (nullable)                         |
+| `sound_clip`          | string            | S3 object key of the associated WAV file                     |
+| `suspected_reason`    | text              | Reason text snapshot (denormalized)                          |
+| `suspected_reason_id` | uuid FK → Reason  | Resolved reason (nullable)                                   |
+| `action`              | text              | Action text snapshot (denormalized)                          |
+| `action_id`           | uuid FK → Action  | Resolved action (nullable)                                   |
+| `comment`             | text              | Free-text operator note                                      |
+| `updated_at`          | datetime (tz)     | Last annotation timestamp                                    |
+| `updated_by`          | string            | Actor who last annotated (currently hardcoded to `admin-ui`) |
 
-Text snapshot columns (`machine`, `suspected_reason`, `action`) exist alongside FK columns to preserve historical readability when lookup values are later renamed or deactivated.
+Text snapshot columns (`machine`, `sensor`, `suspected_reason`, `action`) exist alongside FK columns to preserve historical readability when lookup values are later renamed or deactivated.
 
 ### Machine
 
 Catalog of industrial machines. Scopes reasons.
 
-| Column                      | Type          | Description                                |
-| --------------------------- | ------------- | ------------------------------------------ |
-| `id`                        | int PK        |                                            |
-| `key`                       | string unique | Normalized lowercase key derived from name |
-| `name`                      | string        | Display name                               |
-| `is_active`                 | bool          | Whether selectable in alert forms          |
-| `created_at` / `updated_at` | datetime (tz) |                                            |
+| Column                      | Type          | Description                                  |
+| --------------------------- | ------------- | -------------------------------------------- |
+| `id`                        | uuid PK       |                                              |
+| `key`                       | string unique | Normalized lowercase key derived from name   |
+| `name`                      | string        | Display name                                 |
+| `is_active`                 | bool          | Whether selectable in alert forms            |
+| `baseline_sound_clip`       | string        | S3 object key of the baseline WAV (nullable) |
+| `created_at` / `updated_at` | datetime (tz) |                                              |
+
+### Sensor
+
+Sensors attached to machines. Alert events reference a sensor by FK.
+
+| Column                      | Type              | Description                       |
+| --------------------------- | ----------------- | --------------------------------- |
+| `id`                        | uuid PK           |                                   |
+| `machine_id`                | uuid FK → Machine | Owning machine                    |
+| `serial`                    | string            | Physical serial number            |
+| `name`                      | string            | Display name                      |
+| `key`                       | string            | Normalized key                    |
+| `is_active`                 | bool              | Whether selectable in alert forms |
+| `created_at` / `updated_at` | datetime (tz)     |                                   |
 
 ### Reason
 
 Anomaly reasons, scoped per machine.
 
-| Column                      | Type             | Description                                  |
-| --------------------------- | ---------------- | -------------------------------------------- |
-| `id`                        | int PK           |                                              |
-| `machine_id`                | int FK → Machine | Owning machine                               |
-| `key`                       | string           | Normalized key (unique within machine scope) |
-| `reason`                    | string           | Display text                                 |
-| `is_active`                 | bool             | Whether selectable in alert forms            |
-| `created_at` / `updated_at` | datetime (tz)    |                                              |
+| Column                      | Type              | Description                                  |
+| --------------------------- | ----------------- | -------------------------------------------- |
+| `id`                        | uuid PK           |                                              |
+| `machine_id`                | uuid FK → Machine | Owning machine                               |
+| `key`                       | string            | Normalized key (unique within machine scope) |
+| `reason`                    | string            | Display text                                 |
+| `is_active`                 | bool              | Whether selectable in alert forms            |
+| `created_at` / `updated_at` | datetime (tz)     |                                              |
 
 ### Action
 
@@ -72,7 +92,7 @@ Global remediation actions (not machine-scoped).
 
 | Column                      | Type          | Description                       |
 | --------------------------- | ------------- | --------------------------------- |
-| `id`                        | int PK        |                                   |
+| `id`                        | uuid PK       |                                   |
 | `key`                       | string unique | Normalized key                    |
 | `action`                    | string        | Display text                      |
 | `is_active`                 | bool          | Whether selectable in alert forms |
@@ -80,13 +100,13 @@ Global remediation actions (not machine-scoped).
 
 ### AuditLog
 
-Append-only log of mutations. Written on every alert annotation and every settings create/update.
+Append-only log of mutations. Written on every alert annotation and every settings create/update. Implemented as a TimescaleDB hypertable partitioned on `created_at`.
 
 | Column                       | Type          | Description                                   |
 | ---------------------------- | ------------- | --------------------------------------------- |
-| `id`                         | int PK        |                                               |
+| `id`                         | uuid PK       |                                               |
 | `entity_type`                | string        | `alert`, `machine`, `reason`, or `action`     |
-| `entity_id`                  | int           | PK of the affected row                        |
+| `entity_id`                  | uuid          | PK of the affected row                        |
 | `operation`                  | string        | `create` or `update`                          |
 | `actor`                      | string        | Currently always `admin-ui`                   |
 | `before_json` / `after_json` | JSON          | State snapshot before and after the operation |
@@ -98,14 +118,16 @@ All routes are prefixed `/api/v1`. Interactive docs available at `/docs` (Swagge
 
 ### Alerts
 
-| Method  | Path                       | Description                                                               |
-| ------- | -------------------------- | ------------------------------------------------------------------------- |
-| `GET`   | `/alerts`                  | List alerts. Query params: `machine`, `anomaly`, `start_date`, `end_date` |
-| `GET`   | `/alerts/{id}`             | Single alert detail                                                       |
-| `PATCH` | `/alerts/{id}`             | Annotate alert — set `suspected_reason_id`, `action_id`, `comment`        |
-| `GET`   | `/alerts/{id}/audio`       | Stream WAV file. Supports `Range` header for seeking                      |
-| `GET`   | `/alerts/{id}/waveform`    | Waveform JSON: `{ times[], amplitudes[], duration_seconds }`              |
-| `GET`   | `/alerts/{id}/spectrogram` | PNG spectrogram image (generated on first access, cached)                 |
+| Method  | Path                             | Description                                                                                                                  |
+| ------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `GET`   | `/alerts`                        | List alerts. Query params: `machine`, `anomaly`, `start_date`, `end_date`                                                    |
+| `GET`   | `/alerts/{id}`                   | Single alert detail                                                                                                          |
+| `PATCH` | `/alerts/{id}`                   | Annotate alert — set `suspected_reason_id`, `action_id`, `comment`                                                           |
+| `GET`   | `/alerts/{id}/audio`             | Redirects to presigned S3 URL for the WAV file                                                                               |
+| `GET`   | `/alerts/{id}/waveform`          | Waveform JSON: `{ times[], amplitudes[], duration_seconds }`. Three-tier cache: in-memory dict → S3 JSON → computed from WAV |
+| `GET`   | `/alerts/{id}/spectrogram`       | Redirects to presigned S3 URL for the PNG spectrogram (mel scale, fmax=8000 Hz, n_mels=128, n_fft=2048, hop_length=512)      |
+| `GET`   | `/alerts/{id}/baseline/audio`    | Redirects to presigned S3 URL for the machine's baseline WAV file                                                            |
+| `GET`   | `/alerts/{id}/baseline/waveform` | Waveform JSON for the machine's baseline audio                                                                               |
 
 Alert list is sorted descending by timestamp. The `PATCH` endpoint validates that selected reasons belong to the alert's machine and that both reasons and actions are active. Inactive selections are rejected with HTTP 400.
 
@@ -181,9 +203,9 @@ TanStack Query options and mutation hooks for alerts and lookup entities. Settin
 
 Two applied migrations:
 
-1. `69333faeabcc` — initial schema: `alerts`, `reasons`, `actions`
-2. `1f0f7c9f4a21` — v2 schema: adds `machines`, `audit_log`; extends `alerts` with FK columns; adds `is_active` and normalized keys to reasons/actions
+1. `0a412b99977d` — initial PostgreSQL/TimescaleDB schema with uuid7 PKs: `machines`, `sensors`, `reasons`, `actions`, `alerts`; `audit_log` as a TimescaleDB hypertable partitioned on `created_at`
+2. `b1c2d3e4f5a6` — adds `baseline_sound_clip` to `machines`
 
-Migration strategy: no backfill. The project had no production data at the time of the v2 migration. Fresh environments are seeded deterministically.
+Migration strategy: no backfill. The project had no production data at the time of initial migration. Fresh environments are seeded deterministically.
 
 See [`apps/server/MIGRATION_GUIDE.md`](../apps/server/MIGRATION_GUIDE.md) for migration commands.
