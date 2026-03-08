@@ -10,11 +10,14 @@ import {
   createSensorApiV1LookupSensorsPost,
   getActionsApiV1LookupActionsGet,
   getAlertApiV1AlertsAlertIdGet,
+  getAlertTrendsApiV1AnalyticsAlertTrendsGet,
   getAudioApiV1AlertsAlertIdAudioGet,
   getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet,
   getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet,
   getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet,
+  getMachineHealthApiV1AnalyticsMachineHealthGet,
   getMachinesApiV1LookupMachinesGet,
+  getOverviewApiV1AnalyticsOverviewGet,
   getReasonsApiV1LookupReasonsGet,
   getSensorsApiV1LookupSensorsGet,
   getSpectrogramApiV1AlertsAlertIdSpectrogramGet,
@@ -48,6 +51,9 @@ import type {
   GetAlertApiV1AlertsAlertIdGetData,
   GetAlertApiV1AlertsAlertIdGetError,
   GetAlertApiV1AlertsAlertIdGetResponse,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetData,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetError,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse,
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetError,
   GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData,
@@ -57,9 +63,13 @@ import type {
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetData,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetError,
   GetMachinesApiV1LookupMachinesGetResponse,
+  GetOverviewApiV1AnalyticsOverviewGetData,
+  GetOverviewApiV1AnalyticsOverviewGetResponse,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetError,
   GetReasonsApiV1LookupReasonsGetResponse,
@@ -735,6 +745,90 @@ export const healthApiV1HealthGetOptions = (options?: Options<HealthApiV1HealthG
       return data;
     },
     queryKey: healthApiV1HealthGetQueryKey(options),
+  });
+
+export const getOverviewApiV1AnalyticsOverviewGetQueryKey = (
+  options?: Options<GetOverviewApiV1AnalyticsOverviewGetData>,
+) => createQueryKey("getOverviewApiV1AnalyticsOverviewGet", options);
+
+/**
+ * Get Overview
+ */
+export const getOverviewApiV1AnalyticsOverviewGetOptions = (
+  options?: Options<GetOverviewApiV1AnalyticsOverviewGetData>,
+) =>
+  queryOptions<
+    GetOverviewApiV1AnalyticsOverviewGetResponse,
+    DefaultError,
+    GetOverviewApiV1AnalyticsOverviewGetResponse,
+    ReturnType<typeof getOverviewApiV1AnalyticsOverviewGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getOverviewApiV1AnalyticsOverviewGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getOverviewApiV1AnalyticsOverviewGetQueryKey(options),
+  });
+
+export const getAlertTrendsApiV1AnalyticsAlertTrendsGetQueryKey = (
+  options?: Options<GetAlertTrendsApiV1AnalyticsAlertTrendsGetData>,
+) => createQueryKey("getAlertTrendsApiV1AnalyticsAlertTrendsGet", options);
+
+/**
+ * Get Alert Trends
+ */
+export const getAlertTrendsApiV1AnalyticsAlertTrendsGetOptions = (
+  options?: Options<GetAlertTrendsApiV1AnalyticsAlertTrendsGetData>,
+) =>
+  queryOptions<
+    GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse,
+    GetAlertTrendsApiV1AnalyticsAlertTrendsGetError,
+    GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse,
+    ReturnType<typeof getAlertTrendsApiV1AnalyticsAlertTrendsGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAlertTrendsApiV1AnalyticsAlertTrendsGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAlertTrendsApiV1AnalyticsAlertTrendsGetQueryKey(options),
+  });
+
+export const getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey = (
+  options?: Options<GetMachineHealthApiV1AnalyticsMachineHealthGetData>,
+) => createQueryKey("getMachineHealthApiV1AnalyticsMachineHealthGet", options);
+
+/**
+ * Get Machine Health
+ */
+export const getMachineHealthApiV1AnalyticsMachineHealthGetOptions = (
+  options?: Options<GetMachineHealthApiV1AnalyticsMachineHealthGetData>,
+) =>
+  queryOptions<
+    GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
+    DefaultError,
+    GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
+    ReturnType<typeof getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getMachineHealthApiV1AnalyticsMachineHealthGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey(options),
   });
 
 export const healthCompatHealthGetQueryKey = (options?: Options<HealthCompatHealthGetData>) =>

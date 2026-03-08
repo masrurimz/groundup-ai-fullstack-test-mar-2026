@@ -121,6 +121,24 @@ export type AlertResponse = {
 };
 
 /**
+ * AlertTrendPoint
+ */
+export type AlertTrendPoint = {
+  /**
+   * Bucket
+   */
+  bucket: string;
+  /**
+   * Count
+   */
+  count: number;
+  /**
+   * Machine
+   */
+  machine?: string | null;
+};
+
+/**
  * AlertUpdateRequest
  */
 export type AlertUpdateRequest = {
@@ -136,6 +154,36 @@ export type AlertUpdateRequest = {
    * Comment
    */
   comment?: string | null;
+};
+
+/**
+ * DashboardOverview
+ */
+export type DashboardOverview = {
+  /**
+   * Total Machines
+   */
+  total_machines: number;
+  /**
+   * Active Machines
+   */
+  active_machines: number;
+  /**
+   * Total Alerts 24H
+   */
+  total_alerts_24h: number;
+  /**
+   * Critical Alerts
+   */
+  critical_alerts: number;
+  /**
+   * Warning Alerts
+   */
+  warning_alerts: number;
+  /**
+   * Resolved Rate
+   */
+  resolved_rate: number;
 };
 
 /**
@@ -156,6 +204,40 @@ export type MachineCreateRequest = {
    * Name
    */
   name: string;
+};
+
+/**
+ * MachineHealthSummary
+ */
+export type MachineHealthSummary = {
+  /**
+   * Machine Id
+   */
+  machine_id: string;
+  /**
+   * Machine Name
+   */
+  machine_name: string;
+  /**
+   * Total Alerts
+   */
+  total_alerts: number;
+  /**
+   * Active Alerts
+   */
+  active_alerts: number;
+  /**
+   * Critical Count
+   */
+  critical_count: number;
+  /**
+   * Warning Count
+   */
+  warning_count: number;
+  /**
+   * Last Alert At
+   */
+  last_alert_at: string | null;
 };
 
 /**
@@ -1074,6 +1156,86 @@ export type HealthApiV1HealthGetResponses = {
 
 export type HealthApiV1HealthGetResponse =
   HealthApiV1HealthGetResponses[keyof HealthApiV1HealthGetResponses];
+
+export type GetOverviewApiV1AnalyticsOverviewGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/analytics/overview";
+};
+
+export type GetOverviewApiV1AnalyticsOverviewGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: DashboardOverview;
+};
+
+export type GetOverviewApiV1AnalyticsOverviewGetResponse =
+  GetOverviewApiV1AnalyticsOverviewGetResponses[keyof GetOverviewApiV1AnalyticsOverviewGetResponses];
+
+export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Interval
+     *
+     * Bucket interval: '1 hour', '1 day', or '1 week'
+     */
+    interval?: string;
+    /**
+     * Days
+     */
+    days?: number;
+    /**
+     * Machine Id
+     */
+    machine_id?: string | null;
+  };
+  url: "/api/v1/analytics/alert-trends";
+};
+
+export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetError =
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetErrors[keyof GetAlertTrendsApiV1AnalyticsAlertTrendsGetErrors];
+
+export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses = {
+  /**
+   * Response Get Alert Trends Api V1 Analytics Alert Trends Get
+   *
+   * Successful Response
+   */
+  200: Array<AlertTrendPoint>;
+};
+
+export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse =
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses[keyof GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses];
+
+export type GetMachineHealthApiV1AnalyticsMachineHealthGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/analytics/machine-health";
+};
+
+export type GetMachineHealthApiV1AnalyticsMachineHealthGetResponses = {
+  /**
+   * Response Get Machine Health Api V1 Analytics Machine Health Get
+   *
+   * Successful Response
+   */
+  200: Array<MachineHealthSummary>;
+};
+
+export type GetMachineHealthApiV1AnalyticsMachineHealthGetResponse =
+  GetMachineHealthApiV1AnalyticsMachineHealthGetResponses[keyof GetMachineHealthApiV1AnalyticsMachineHealthGetResponses];
 
 export type HealthCompatHealthGetData = {
   body?: never;

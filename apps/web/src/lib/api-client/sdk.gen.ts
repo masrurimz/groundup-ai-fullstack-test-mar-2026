@@ -21,6 +21,9 @@ import type {
   GetAlertApiV1AlertsAlertIdGetData,
   GetAlertApiV1AlertsAlertIdGetErrors,
   GetAlertApiV1AlertsAlertIdGetResponses,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetData,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetErrors,
+  GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses,
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetErrors,
   GetAudioApiV1AlertsAlertIdAudioGetResponses,
@@ -33,9 +36,13 @@ import type {
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetData,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetResponses,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetErrors,
   GetMachinesApiV1LookupMachinesGetResponses,
+  GetOverviewApiV1AnalyticsOverviewGetData,
+  GetOverviewApiV1AnalyticsOverviewGetResponses,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetErrors,
   GetReasonsApiV1LookupReasonsGetResponses,
@@ -429,6 +436,44 @@ export const healthApiV1HealthGet = <ThrowOnError extends boolean = false>(
     url: "/api/v1/health",
     ...options,
   });
+
+/**
+ * Get Overview
+ */
+export const getOverviewApiV1AnalyticsOverviewGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetOverviewApiV1AnalyticsOverviewGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetOverviewApiV1AnalyticsOverviewGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/api/v1/analytics/overview", ...options });
+
+/**
+ * Get Alert Trends
+ */
+export const getAlertTrendsApiV1AnalyticsAlertTrendsGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAlertTrendsApiV1AnalyticsAlertTrendsGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses,
+    GetAlertTrendsApiV1AnalyticsAlertTrendsGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/analytics/alert-trends", ...options });
+
+/**
+ * Get Machine Health
+ */
+export const getMachineHealthApiV1AnalyticsMachineHealthGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<GetMachineHealthApiV1AnalyticsMachineHealthGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetMachineHealthApiV1AnalyticsMachineHealthGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/api/v1/analytics/machine-health", ...options });
 
 /**
  * Health Compat
