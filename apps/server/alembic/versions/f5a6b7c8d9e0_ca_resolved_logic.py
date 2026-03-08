@@ -31,8 +31,8 @@ def upgrade() -> None:
         WITH NO DATA
     """)
     op.execute(
-        """ALTER MATERIALIZED VIEW alerts_hourly_stats SET (timescaledb.materialized_only = false)"""
-    )  # noqa: E501
+        """ALTER MATERIALIZED VIEW alerts_hourly_stats SET (timescaledb.materialized_only = false)"""  # noqa: E501
+    )
     op.execute("""SELECT add_continuous_aggregate_policy('alerts_hourly_stats',
         start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour',
         schedule_interval => INTERVAL '30 minutes')""")
@@ -54,8 +54,8 @@ def downgrade() -> None:
         WITH NO DATA
     """)
     op.execute(
-        """ALTER MATERIALIZED VIEW alerts_hourly_stats SET (timescaledb.materialized_only = false)"""
-    )  # noqa: E501
+        """ALTER MATERIALIZED VIEW alerts_hourly_stats SET (timescaledb.materialized_only = false)"""  # noqa: E501
+    )
     op.execute("""SELECT add_continuous_aggregate_policy('alerts_hourly_stats',
         start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour',
         schedule_interval => INTERVAL '30 minutes')""")
