@@ -21,6 +21,7 @@ class AlertResponse(BaseModel):
     comment: str | None
     updated_at: datetime | None
     updated_by: str | None
+    status: str  # "resolved" | "unresolved" — computed by hybrid_property
 
     model_config = ConfigDict(from_attributes=True)
 

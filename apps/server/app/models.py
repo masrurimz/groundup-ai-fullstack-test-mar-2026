@@ -1,7 +1,19 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Identity, Integer, String, Text, Uuid
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Identity,
+    Integer,
+    String,
+    Text,
+    Uuid,
+    case,
+)
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from uuid_utils import uuid7
 
@@ -81,6 +93,23 @@ class Alert(Base):
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    @hybrid_property
+    def status(self) -> str:
+        if self.action is not None and self.suspected_reason is not None:
+            return "resolved"
+        return "unresolved"
+
+    @status.inplace.expression
+    @classmethod
+    def _status_expression(cls):
+        return case(
+            (
+                (cls.action.isnot(None)) & (cls.suspected_reason.isnot(None)),
+                "resolved",
+            ),
+            else_="unresolved",
+        )
 
 
 class AuditLog(Base):
