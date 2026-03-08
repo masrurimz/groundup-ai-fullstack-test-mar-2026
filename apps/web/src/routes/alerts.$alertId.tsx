@@ -313,35 +313,40 @@ function BaselinePlaceholderPanel() {
 function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; duration?: number }) {
   const src = getAlertAudioUrl(alertId);
   const [audioError, setAudioError] = useState(false);
-  const durationLabel = formatTime(apiDuration ?? 0);
+  const durationLabel = apiDuration ? formatTime(apiDuration) : null;
 
   useEffect(() => {
     setAudioError(false);
   }, [src]);
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-card/95 p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <AudioLines className="h-4 w-4 text-primary" />
-          Alert Audio Stream
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+            <AudioLines className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <span className="text-sm font-semibold text-foreground">Audio Stream</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-primary">
-            Duration {durationLabel}
-          </span>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-700 dark:text-emerald-400">
-            <span className="inline-flex items-center gap-1">
-              <Activity className="h-3 w-3" />
-              Streaming
+          {durationLabel ? (
+            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+              {durationLabel}
             </span>
+          ) : null}
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+            <Activity className="h-2.5 w-2.5" />
+            Live
           </span>
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-muted/30 px-1 py-1.5 sm:px-2 [&_.rhap_container]:bg-transparent [&_.rhap_container]:p-0 [&_.rhap_container]:shadow-none [&_.rhap_controls-section]:mt-3 [&_.rhap_controls-section]:justify-end [&_.rhap_controls-section]:sm:mt-0 [&_.rhap_controls-section]:sm:justify-start [&_.rhap_main]:gap-3 [&_.rhap_main]:sm:items-center [&_.rhap_main]:sm:gap-4 [&_.rhap_main-controls-button]:text-foreground [&_.rhap_main-controls-button]:transition-colors [&_.rhap_main-controls-button:hover]:text-primary [&_.rhap_play-pause-button]:h-11 [&_.rhap_play-pause-button]:w-11 [&_.rhap_play-pause-button]:rounded-full [&_.rhap_play-pause-button]:bg-primary/10 [&_.rhap_play-pause-button]:text-primary [&_.rhap_progress-filled]:bg-primary [&_.rhap_progress-indicator]:bg-primary [&_.rhap_progress-indicator]:shadow-none [&_.rhap_progress-indicator]:ring-2 [&_.rhap_progress-indicator]:ring-primary/20 [&_.rhap_progress-section]:mx-0 [&_.rhap_progress-section]:grow [&_.rhap_progress-section]:gap-2 [&_.rhap_time]:text-xs [&_.rhap_time]:font-medium [&_.rhap_time]:text-muted-foreground [&_.rhap_volume-button]:text-foreground [&_.rhap_volume-controls]:justify-end [&_.rhap_volume-container]:w-24 [&_.rhap_volume-filled]:bg-primary [&_.rhap_volume-indicator]:bg-primary">
+      {/* Player body */}
+      <div className="px-4 py-4 [&_.rhap_container]:bg-transparent [&_.rhap_container]:p-0 [&_.rhap_container]:shadow-none [&_.rhap_horizontal]:items-center [&_.rhap_horizontal_.rhap_controls-section]:ml-3 [&_.rhap_main-controls]:flex [&_.rhap_main-controls]:items-center [&_.rhap_main-controls]:justify-center [&_.rhap_play-pause-button]:flex [&_.rhap_play-pause-button]:h-9 [&_.rhap_play-pause-button]:w-9 [&_.rhap_play-pause-button]:items-center [&_.rhap_play-pause-button]:justify-center [&_.rhap_play-pause-button]:rounded-full [&_.rhap_play-pause-button]:bg-primary [&_.rhap_play-pause-button]:text-[20px] [&_.rhap_play-pause-button]:text-primary-foreground [&_.rhap_play-pause-button]:transition-opacity [&_.rhap_play-pause-button:hover]:opacity-80 [&_.rhap_controls-section]:flex [&_.rhap_controls-section]:items-center [&_.rhap_controls-section]:justify-end [&_.rhap_progress-section]:flex [&_.rhap_progress-section]:items-center [&_.rhap_progress-section]:gap-2 [&_.rhap_progress-container]:flex-1 [&_.rhap_progress-container]:cursor-pointer [&_.rhap_progress-bar]:h-1.5 [&_.rhap_progress-bar]:rounded-full [&_.rhap_progress-bar-show-download]:bg-muted [&_.rhap_download-progress]:rounded-full [&_.rhap_download-progress]:bg-border [&_.rhap_progress-filled]:rounded-full [&_.rhap_progress-filled]:bg-primary [&_.rhap_progress-indicator]:!h-3.5 [&_.rhap_progress-indicator]:!w-3.5 [&_.rhap_progress-indicator]:!-top-1 [&_.rhap_progress-indicator]:!ml-[-7px] [&_.rhap_progress-indicator]:rounded-full [&_.rhap_progress-indicator]:bg-primary [&_.rhap_progress-indicator]:shadow [&_.rhap_progress-indicator]:ring-[3px] [&_.rhap_progress-indicator]:ring-primary/25 [&_.rhap_time]:text-[11px] [&_.rhap_time]:tabular-nums [&_.rhap_time]:text-muted-foreground [&_.rhap_volume-controls]:flex [&_.rhap_volume-controls]:items-center [&_.rhap_volume-controls]:gap-1 [&_.rhap_volume-button]:flex [&_.rhap_volume-button]:h-7 [&_.rhap_volume-button]:w-7 [&_.rhap_volume-button]:items-center [&_.rhap_volume-button]:justify-center [&_.rhap_volume-button]:rounded-md [&_.rhap_volume-button]:text-[16px] [&_.rhap_volume-button]:text-muted-foreground [&_.rhap_volume-button]:transition-colors [&_.rhap_volume-button:hover]:bg-muted [&_.rhap_volume-button:hover]:text-foreground [&_.rhap_volume-container]:w-20 [&_.rhap_volume-bar-area]:h-3 [&_.rhap_volume-bar]:h-1 [&_.rhap_volume-bar]:rounded-full [&_.rhap_volume-bar]:bg-muted [&_.rhap_volume-filled]:rounded-full [&_.rhap_volume-filled]:bg-primary [&_.rhap_volume-indicator]:!h-2.5 [&_.rhap_volume-indicator]:!w-2.5 [&_.rhap_volume-indicator]:!-top-[3px] [&_.rhap_volume-indicator]:!ml-[-5px] [&_.rhap_volume-indicator]:rounded-full [&_.rhap_volume-indicator]:bg-primary [&_.rhap_volume-indicator]:shadow-sm [&_.rhap_additional-controls]:hidden">
         <ReactH5AudioPlayer
           src={src}
+          layout="horizontal"
           preload="metadata"
           autoPlayAfterSrcChange={false}
           showJumpControls={false}
@@ -352,14 +357,19 @@ function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; dura
         />
       </div>
 
+      {/* Footer status */}
       {audioError ? (
-        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-          Unable to load audio stream right now. Expected clip length: {durationLabel}.
-        </p>
+        <div className="border-t border-border bg-amber-50/60 px-4 py-2 dark:bg-amber-950/30">
+          <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+            Unable to load audio stream{durationLabel ? ` · expected ${durationLabel}` : ""}.
+          </p>
+        </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          Use the timeline to seek; playback supports byte-range streaming.
-        </p>
+        <div className="border-t border-border px-4 py-2">
+          <p className="text-[11px] text-muted-foreground">
+            Seek anywhere · byte-range streaming enabled
+          </p>
+        </div>
       )}
     </div>
   );
