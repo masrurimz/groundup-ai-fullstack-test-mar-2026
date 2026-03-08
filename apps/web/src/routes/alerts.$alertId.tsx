@@ -169,10 +169,10 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
   }, [alertId]);
 
   return (
-    <div>
+    <div className="min-w-0 overflow-hidden">
       <h3 className="mb-6 text-lg font-medium text-foreground">Anomaly Machine Output</h3>
       <AudioPlayer alertId={alertId} duration={waveform?.duration_seconds} />
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 space-y-6 pl-12">
         <WaveformChart waveform={waveform} isLoading={waveformLoading} hasError={waveformError} />
         <SpectrogramImage alertId={alertId} duration={waveform?.duration_seconds} />
       </div>
@@ -361,8 +361,8 @@ function WaveformChart({
   const path = useMemo(() => (waveform ? buildWaveformPath(waveform) : ""), [waveform]);
 
   return (
-    <div className="relative h-48 border-b border-l border-border">
-      <div className="absolute -left-10 bottom-0 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
+    <div className="relative h-48 overflow-visible border-b border-l border-border">
+      <div className="absolute -left-12 bottom-0 top-0 flex w-10 flex-col items-end justify-between py-1 text-[10px] font-medium text-muted-foreground">
         <span>AMP</span>
         {Y_AXIS_LABELS.map((label) => (
           <span key={label}>{label}</span>
@@ -427,9 +427,9 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
   }, [duration]);
 
   return (
-    <div className="relative border-b border-l border-border pb-6">
+    <div className="relative border-b border-l border-border">
       {/* Y-axis labels */}
-      <div className="absolute -left-10 bottom-6 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
+      <div className="absolute -left-12 bottom-0 top-0 flex w-10 flex-col items-end justify-between py-1 text-[10px] font-medium text-muted-foreground">
         <span>8192</span>
         <span>4096</span>
         <span>2048</span>
@@ -465,7 +465,7 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
       </div>
 
       {/* X-axis time labels */}
-      <div className="absolute -bottom-0 left-0 right-0 flex justify-between px-1 text-[10px] font-medium text-muted-foreground">
+      <div className="flex justify-between px-1 pt-1 text-[10px] font-medium text-muted-foreground">
         {timeLabels.map((t) => (
           <span key={t}>{t}</span>
         ))}
