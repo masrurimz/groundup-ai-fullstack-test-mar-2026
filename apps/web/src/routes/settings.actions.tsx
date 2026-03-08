@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -64,22 +65,31 @@ function ActionsPage() {
           e.preventDefault();
           void form.handleSubmit();
         }}
-        className="mb-8 flex items-start gap-3"
+        className="mb-8 flex items-end gap-3"
       >
         <form.Field name="action">
           {(field) => (
-            <div className="w-72">
+            <Field
+              className="w-72"
+              data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            >
+              <FieldLabel htmlFor={field.name}>Action label</FieldLabel>
               <Input
+                id={field.name}
+                name={field.name}
                 placeholder="Action label"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 disabled={form.state.isSubmitting}
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
               />
-              {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                <p className="mt-1 text-xs text-red-500">{String(field.state.meta.errors[0])}</p>
-              ) : null}
-            </div>
+              <FieldError
+                errors={field.state.meta.errors.map((e) =>
+                  typeof e === "string" ? { message: e } : (e as { message?: string }),
+                )}
+              />
+            </Field>
           )}
         </form.Field>
 

@@ -8,6 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -82,17 +83,21 @@ function ReasonsPage() {
           e.preventDefault();
           void form.handleSubmit();
         }}
-        className="mb-8 flex items-start gap-3"
+        className="mb-8 flex items-end gap-3"
       >
         <form.Field name="machine_id">
           {(field) => (
-            <div className="w-48">
+            <Field
+              className="w-48"
+              data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            >
+              <FieldLabel htmlFor={field.name}>Machine</FieldLabel>
               <Select
                 value={field.state.value != null ? String(field.state.value) : undefined}
                 onValueChange={(v) => field.handleChange(Number(v))}
                 disabled={form.state.isSubmitting || machinesQuery.isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger id={field.name}>
                   <SelectValue placeholder="Select machine" />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,27 +108,38 @@ function ReasonsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                <p className="mt-1 text-xs text-red-500">{String(field.state.meta.errors[0])}</p>
-              ) : null}
-            </div>
+              <FieldError
+                errors={field.state.meta.errors.map((e) =>
+                  typeof e === "string" ? { message: e } : (e as { message?: string }),
+                )}
+              />
+            </Field>
           )}
         </form.Field>
 
         <form.Field name="reason">
           {(field) => (
-            <div className="w-64">
+            <Field
+              className="w-64"
+              data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            >
+              <FieldLabel htmlFor={field.name}>Reason</FieldLabel>
               <Input
+                id={field.name}
+                name={field.name}
                 placeholder="Reason label"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 disabled={form.state.isSubmitting}
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
               />
-              {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                <p className="mt-1 text-xs text-red-500">{String(field.state.meta.errors[0])}</p>
-              ) : null}
-            </div>
+              <FieldError
+                errors={field.state.meta.errors.map((e) =>
+                  typeof e === "string" ? { message: e } : (e as { message?: string }),
+                )}
+              />
+            </Field>
           )}
         </form.Field>
 
@@ -156,7 +172,12 @@ function ReasonsPage() {
           onValueChange={(v) => setFilterMachineId(v === "__all__" ? undefined : Number(v))}
         >
           <SelectTrigger className="w-44">
-            <SelectValue />
+            <SelectValue>
+              {filterMachineId == null
+                ? "All Machines"
+                : (machines.find((m) => String(m.id) === String(filterMachineId))?.name ??
+                  "All Machines")}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">All Machines</SelectItem>
