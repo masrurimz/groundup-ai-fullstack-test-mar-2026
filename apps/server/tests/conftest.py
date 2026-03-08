@@ -1,5 +1,6 @@
 import math
 import wave
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,7 +29,7 @@ def _create_test_wav(
 
 
 @pytest.fixture
-async def test_client(tmp_path: Path) -> AsyncClient:
+async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
     db_path = tmp_path / "test.db"
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}")
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
