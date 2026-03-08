@@ -26,11 +26,14 @@ export default function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex h-full items-center gap-4">
         <Link
           to="/settings"
           aria-label="Open settings"
-          className="text-gray-400 hover:text-gray-600 [&.active]:text-primary"
+          className={cn(
+            "flex h-full items-center border-b-4 border-transparent px-1 text-gray-400 transition-colors hover:text-gray-600",
+            matchRoute({ to: "/settings", fuzzy: true }) && "border-primary text-primary",
+          )}
         >
           <Settings className="h-5 w-5" />
         </Link>
