@@ -78,17 +78,12 @@ def generate_waveform(wav_path: Path, max_points: int = 2048) -> WaveformData:
     }
 
 
-def generate_waveform_cached(
-    wav_path: Path, cache_key: str, max_points: int = 2048
-) -> WaveformData:
+def get_waveform_from_cache(cache_key: str) -> WaveformData | None:
+    """Check in-memory cache only. No I/O."""
     with _waveform_cache_lock:
-        cached = _waveform_cache.get(cache_key)
+        return _waveform_cache.get(cache_key)
 
-    if cached is not None:
-        return cached
 
-    waveform = generate_waveform(wav_path=wav_path, max_points=max_points)
+def put_waveform_in_cache(cache_key: str, data: WaveformData) -> None:
     with _waveform_cache_lock:
-        _waveform_cache[cache_key] = waveform
-
-    return waveform
+        _waveform_cache[cache_key] = data
