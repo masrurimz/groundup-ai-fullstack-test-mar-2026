@@ -8,11 +8,10 @@ import type { AlertItem } from "./types";
 interface AlertListItemProps {
   alert: AlertItem;
   active: boolean;
-  machineLabel: string;
   onSelect: (alertId: string) => void;
 }
 
-export function AlertListItem({ alert, active, machineLabel, onSelect }: AlertListItemProps) {
+export function AlertListItem({ alert, active, onSelect }: AlertListItemProps) {
   const isNew = alert.status === "active";
 
   return (
@@ -47,7 +46,7 @@ export function AlertListItem({ alert, active, machineLabel, onSelect }: AlertLi
               Detected at {formatDateTime(alert.created_at)}
             </p>
           </div>
-          <p className="mt-2 text-[11px] font-medium text-primary">{machineLabel}</p>
+          <p className="mt-2 text-[11px] font-medium text-primary">{alert.machine}</p>
         </div>
       </Button>
     </Card>

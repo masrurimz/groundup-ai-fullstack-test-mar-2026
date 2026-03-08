@@ -140,7 +140,11 @@ function DashboardComponent() {
               alerts={alerts}
               isLoading={loading}
               onAlertClick={(id) => {
-                void navigate({ to: "/alerts/$alertId", params: { alertId: id } });
+                void navigate({
+                  to: "/alerts/$alertId",
+                  params: { alertId: id },
+                  search: { machine: undefined },
+                });
               }}
             />
           </div>
