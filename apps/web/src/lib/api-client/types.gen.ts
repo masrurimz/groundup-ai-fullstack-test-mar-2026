@@ -118,24 +118,36 @@ export type AlertResponse = {
    * Updated By
    */
   updated_by: string | null;
+  /**
+   * Status
+   */
+  status: string;
 };
 
 /**
- * AlertTrendPoint
+ * AlertTrendBucket
  */
-export type AlertTrendPoint = {
+export type AlertTrendBucket = {
   /**
    * Bucket
    */
   bucket: string;
   /**
-   * Count
+   * Critical
    */
-  count: number;
+  critical: number;
   /**
-   * Machine
+   * Warning
    */
-  machine?: string | null;
+  warning: number;
+  /**
+   * Mild
+   */
+  mild: number;
+  /**
+   * Total
+   */
+  total: number;
 };
 
 /**
@@ -180,6 +192,10 @@ export type DashboardOverview = {
    * Warning Alerts
    */
   warning_alerts: number;
+  /**
+   * Mild Alerts
+   */
+  mild_alerts: number;
   /**
    * Resolved Rate
    */
@@ -1160,9 +1176,24 @@ export type HealthApiV1HealthGetResponse =
 export type GetOverviewApiV1AnalyticsOverviewGetData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Days
+     */
+    days?: number;
+  };
   url: "/api/v1/analytics/overview";
 };
+
+export type GetOverviewApiV1AnalyticsOverviewGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetOverviewApiV1AnalyticsOverviewGetError =
+  GetOverviewApiV1AnalyticsOverviewGetErrors[keyof GetOverviewApiV1AnalyticsOverviewGetErrors];
 
 export type GetOverviewApiV1AnalyticsOverviewGetResponses = {
   /**
@@ -1212,7 +1243,7 @@ export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponses = {
    *
    * Successful Response
    */
-  200: Array<AlertTrendPoint>;
+  200: Array<AlertTrendBucket>;
 };
 
 export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse =
@@ -1221,9 +1252,24 @@ export type GetAlertTrendsApiV1AnalyticsAlertTrendsGetResponse =
 export type GetMachineHealthApiV1AnalyticsMachineHealthGetData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Days
+     */
+    days?: number;
+  };
   url: "/api/v1/analytics/machine-health";
 };
+
+export type GetMachineHealthApiV1AnalyticsMachineHealthGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetMachineHealthApiV1AnalyticsMachineHealthGetError =
+  GetMachineHealthApiV1AnalyticsMachineHealthGetErrors[keyof GetMachineHealthApiV1AnalyticsMachineHealthGetErrors];
 
 export type GetMachineHealthApiV1AnalyticsMachineHealthGetResponses = {
   /**

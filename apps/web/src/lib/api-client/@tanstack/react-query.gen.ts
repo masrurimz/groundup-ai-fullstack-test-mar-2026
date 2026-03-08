@@ -64,11 +64,13 @@ import type {
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
   GetMachineHealthApiV1AnalyticsMachineHealthGetData,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetError,
   GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetError,
   GetMachinesApiV1LookupMachinesGetResponse,
   GetOverviewApiV1AnalyticsOverviewGetData,
+  GetOverviewApiV1AnalyticsOverviewGetError,
   GetOverviewApiV1AnalyticsOverviewGetResponse,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetError,
@@ -759,7 +761,7 @@ export const getOverviewApiV1AnalyticsOverviewGetOptions = (
 ) =>
   queryOptions<
     GetOverviewApiV1AnalyticsOverviewGetResponse,
-    DefaultError,
+    GetOverviewApiV1AnalyticsOverviewGetError,
     GetOverviewApiV1AnalyticsOverviewGetResponse,
     ReturnType<typeof getOverviewApiV1AnalyticsOverviewGetQueryKey>
   >({
@@ -815,7 +817,7 @@ export const getMachineHealthApiV1AnalyticsMachineHealthGetOptions = (
 ) =>
   queryOptions<
     GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
-    DefaultError,
+    GetMachineHealthApiV1AnalyticsMachineHealthGetError,
     GetMachineHealthApiV1AnalyticsMachineHealthGetResponse,
     ReturnType<typeof getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey>
   >({

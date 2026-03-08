@@ -37,11 +37,13 @@ import type {
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors,
   GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses,
   GetMachineHealthApiV1AnalyticsMachineHealthGetData,
+  GetMachineHealthApiV1AnalyticsMachineHealthGetErrors,
   GetMachineHealthApiV1AnalyticsMachineHealthGetResponses,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetErrors,
   GetMachinesApiV1LookupMachinesGetResponses,
   GetOverviewApiV1AnalyticsOverviewGetData,
+  GetOverviewApiV1AnalyticsOverviewGetErrors,
   GetOverviewApiV1AnalyticsOverviewGetResponses,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetErrors,
@@ -445,7 +447,7 @@ export const getOverviewApiV1AnalyticsOverviewGet = <ThrowOnError extends boolea
 ) =>
   (options?.client ?? client).get<
     GetOverviewApiV1AnalyticsOverviewGetResponses,
-    unknown,
+    GetOverviewApiV1AnalyticsOverviewGetErrors,
     ThrowOnError
   >({ url: "/api/v1/analytics/overview", ...options });
 
@@ -471,7 +473,7 @@ export const getMachineHealthApiV1AnalyticsMachineHealthGet = <
 ) =>
   (options?.client ?? client).get<
     GetMachineHealthApiV1AnalyticsMachineHealthGetResponses,
-    unknown,
+    GetMachineHealthApiV1AnalyticsMachineHealthGetErrors,
     ThrowOnError
   >({ url: "/api/v1/analytics/machine-health", ...options });
 
