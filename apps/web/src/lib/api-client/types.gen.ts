@@ -5,6 +5,30 @@ export type ClientOptions = {
 };
 
 /**
+ * ActionCreateRequest
+ */
+export type ActionCreateRequest = {
+  /**
+   * Action
+   */
+  action: string;
+};
+
+/**
+ * ActionUpdateRequest
+ */
+export type ActionUpdateRequest = {
+  /**
+   * Action
+   */
+  action?: string | null;
+  /**
+   * Is Active
+   */
+  is_active?: boolean | null;
+};
+
+/**
  * AlertResponse
  */
 export type AlertResponse = {
@@ -20,6 +44,10 @@ export type AlertResponse = {
    * Machine
    */
   machine: string;
+  /**
+   * Machine Id
+   */
+  machine_id: number | null;
   /**
    * Anomaly Type
    */
@@ -37,13 +65,29 @@ export type AlertResponse = {
    */
   suspected_reason: string | null;
   /**
+   * Suspected Reason Id
+   */
+  suspected_reason_id: number | null;
+  /**
    * Action
    */
   action: string | null;
   /**
+   * Action Id
+   */
+  action_id: number | null;
+  /**
    * Comment
    */
   comment: string | null;
+  /**
+   * Updated At
+   */
+  updated_at: string | null;
+  /**
+   * Updated By
+   */
+  updated_by: string | null;
 };
 
 /**
@@ -51,13 +95,13 @@ export type AlertResponse = {
  */
 export type AlertUpdateRequest = {
   /**
-   * Suspected Reason
+   * Suspected Reason Id
    */
-  suspected_reason?: string | null;
+  suspected_reason_id?: number | null;
   /**
-   * Action
+   * Action Id
    */
-  action?: string | null;
+  action_id?: number | null;
   /**
    * Comment
    */
@@ -90,6 +134,74 @@ export type LookupItem = {
    * Category
    */
   category: string;
+  /**
+   * Key
+   */
+  key: string;
+  /**
+   * Is Active
+   */
+  is_active: boolean;
+  /**
+   * Machine Id
+   */
+  machine_id?: number | null;
+  /**
+   * Machine Name
+   */
+  machine_name?: string | null;
+};
+
+/**
+ * MachineCreateRequest
+ */
+export type MachineCreateRequest = {
+  /**
+   * Name
+   */
+  name: string;
+};
+
+/**
+ * MachineUpdateRequest
+ */
+export type MachineUpdateRequest = {
+  /**
+   * Name
+   */
+  name?: string | null;
+  /**
+   * Is Active
+   */
+  is_active?: boolean | null;
+};
+
+/**
+ * ReasonCreateRequest
+ */
+export type ReasonCreateRequest = {
+  /**
+   * Machine Id
+   */
+  machine_id: number;
+  /**
+   * Reason
+   */
+  reason: string;
+};
+
+/**
+ * ReasonUpdateRequest
+ */
+export type ReasonUpdateRequest = {
+  /**
+   * Reason
+   */
+  reason?: string | null;
+  /**
+   * Is Active
+   */
+  is_active?: boolean | null;
 };
 
 /**
@@ -355,9 +467,13 @@ export type GetLookupItemsApiV1LookupGetData = {
      */
     category?: string | null;
     /**
-     * Machine
+     * Machine Id
      */
-    machine?: string | null;
+    machine_id?: number | null;
+    /**
+     * Include Inactive
+     */
+    include_inactive?: boolean;
   };
   url: "/api/v1/lookup";
 };
@@ -384,14 +500,115 @@ export type GetLookupItemsApiV1LookupGetResponses = {
 export type GetLookupItemsApiV1LookupGetResponse =
   GetLookupItemsApiV1LookupGetResponses[keyof GetLookupItemsApiV1LookupGetResponses];
 
+export type GetMachinesApiV1LookupMachinesGetData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Include Inactive
+     */
+    include_inactive?: boolean;
+  };
+  url: "/api/v1/lookup/machines";
+};
+
+export type GetMachinesApiV1LookupMachinesGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetMachinesApiV1LookupMachinesGetError =
+  GetMachinesApiV1LookupMachinesGetErrors[keyof GetMachinesApiV1LookupMachinesGetErrors];
+
+export type GetMachinesApiV1LookupMachinesGetResponses = {
+  /**
+   * Response Get Machines Api V1 Lookup Machines Get
+   *
+   * Successful Response
+   */
+  200: Array<LookupItem>;
+};
+
+export type GetMachinesApiV1LookupMachinesGetResponse =
+  GetMachinesApiV1LookupMachinesGetResponses[keyof GetMachinesApiV1LookupMachinesGetResponses];
+
+export type CreateMachineApiV1LookupMachinesPostData = {
+  body: MachineCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/api/v1/lookup/machines";
+};
+
+export type CreateMachineApiV1LookupMachinesPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateMachineApiV1LookupMachinesPostError =
+  CreateMachineApiV1LookupMachinesPostErrors[keyof CreateMachineApiV1LookupMachinesPostErrors];
+
+export type CreateMachineApiV1LookupMachinesPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: LookupItem;
+};
+
+export type CreateMachineApiV1LookupMachinesPostResponse =
+  CreateMachineApiV1LookupMachinesPostResponses[keyof CreateMachineApiV1LookupMachinesPostResponses];
+
+export type UpdateMachineApiV1LookupMachinesMachineIdPatchData = {
+  body: MachineUpdateRequest;
+  path: {
+    /**
+     * Machine Id
+     */
+    machine_id: number;
+  };
+  query?: never;
+  url: "/api/v1/lookup/machines/{machine_id}";
+};
+
+export type UpdateMachineApiV1LookupMachinesMachineIdPatchErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateMachineApiV1LookupMachinesMachineIdPatchError =
+  UpdateMachineApiV1LookupMachinesMachineIdPatchErrors[keyof UpdateMachineApiV1LookupMachinesMachineIdPatchErrors];
+
+export type UpdateMachineApiV1LookupMachinesMachineIdPatchResponses = {
+  /**
+   * Successful Response
+   */
+  200: LookupItem;
+};
+
+export type UpdateMachineApiV1LookupMachinesMachineIdPatchResponse =
+  UpdateMachineApiV1LookupMachinesMachineIdPatchResponses[keyof UpdateMachineApiV1LookupMachinesMachineIdPatchResponses];
+
 export type GetReasonsApiV1LookupReasonsGetData = {
   body?: never;
   path?: never;
   query?: {
     /**
+     * Machine Id
+     */
+    machine_id?: number | null;
+    /**
      * Machine
      */
     machine?: string | null;
+    /**
+     * Include Inactive
+     */
+    include_inactive?: boolean;
   };
   url: "/api/v1/lookup/reasons";
 };
@@ -412,18 +629,92 @@ export type GetReasonsApiV1LookupReasonsGetResponses = {
    *
    * Successful Response
    */
-  200: Array<string>;
+  200: Array<LookupItem>;
 };
 
 export type GetReasonsApiV1LookupReasonsGetResponse =
   GetReasonsApiV1LookupReasonsGetResponses[keyof GetReasonsApiV1LookupReasonsGetResponses];
 
+export type CreateReasonApiV1LookupReasonsPostData = {
+  body: ReasonCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/api/v1/lookup/reasons";
+};
+
+export type CreateReasonApiV1LookupReasonsPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateReasonApiV1LookupReasonsPostError =
+  CreateReasonApiV1LookupReasonsPostErrors[keyof CreateReasonApiV1LookupReasonsPostErrors];
+
+export type CreateReasonApiV1LookupReasonsPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: LookupItem;
+};
+
+export type CreateReasonApiV1LookupReasonsPostResponse =
+  CreateReasonApiV1LookupReasonsPostResponses[keyof CreateReasonApiV1LookupReasonsPostResponses];
+
+export type UpdateReasonApiV1LookupReasonsReasonIdPatchData = {
+  body: ReasonUpdateRequest;
+  path: {
+    /**
+     * Reason Id
+     */
+    reason_id: number;
+  };
+  query?: never;
+  url: "/api/v1/lookup/reasons/{reason_id}";
+};
+
+export type UpdateReasonApiV1LookupReasonsReasonIdPatchErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateReasonApiV1LookupReasonsReasonIdPatchError =
+  UpdateReasonApiV1LookupReasonsReasonIdPatchErrors[keyof UpdateReasonApiV1LookupReasonsReasonIdPatchErrors];
+
+export type UpdateReasonApiV1LookupReasonsReasonIdPatchResponses = {
+  /**
+   * Successful Response
+   */
+  200: LookupItem;
+};
+
+export type UpdateReasonApiV1LookupReasonsReasonIdPatchResponse =
+  UpdateReasonApiV1LookupReasonsReasonIdPatchResponses[keyof UpdateReasonApiV1LookupReasonsReasonIdPatchResponses];
+
 export type GetActionsApiV1LookupActionsGetData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Include Inactive
+     */
+    include_inactive?: boolean;
+  };
   url: "/api/v1/lookup/actions";
 };
+
+export type GetActionsApiV1LookupActionsGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetActionsApiV1LookupActionsGetError =
+  GetActionsApiV1LookupActionsGetErrors[keyof GetActionsApiV1LookupActionsGetErrors];
 
 export type GetActionsApiV1LookupActionsGetResponses = {
   /**
@@ -431,11 +722,70 @@ export type GetActionsApiV1LookupActionsGetResponses = {
    *
    * Successful Response
    */
-  200: Array<string>;
+  200: Array<LookupItem>;
 };
 
 export type GetActionsApiV1LookupActionsGetResponse =
   GetActionsApiV1LookupActionsGetResponses[keyof GetActionsApiV1LookupActionsGetResponses];
+
+export type CreateActionApiV1LookupActionsPostData = {
+  body: ActionCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/api/v1/lookup/actions";
+};
+
+export type CreateActionApiV1LookupActionsPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateActionApiV1LookupActionsPostError =
+  CreateActionApiV1LookupActionsPostErrors[keyof CreateActionApiV1LookupActionsPostErrors];
+
+export type CreateActionApiV1LookupActionsPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: LookupItem;
+};
+
+export type CreateActionApiV1LookupActionsPostResponse =
+  CreateActionApiV1LookupActionsPostResponses[keyof CreateActionApiV1LookupActionsPostResponses];
+
+export type UpdateActionApiV1LookupActionsActionIdPatchData = {
+  body: ActionUpdateRequest;
+  path: {
+    /**
+     * Action Id
+     */
+    action_id: number;
+  };
+  query?: never;
+  url: "/api/v1/lookup/actions/{action_id}";
+};
+
+export type UpdateActionApiV1LookupActionsActionIdPatchErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateActionApiV1LookupActionsActionIdPatchError =
+  UpdateActionApiV1LookupActionsActionIdPatchErrors[keyof UpdateActionApiV1LookupActionsActionIdPatchErrors];
+
+export type UpdateActionApiV1LookupActionsActionIdPatchResponses = {
+  /**
+   * Successful Response
+   */
+  200: LookupItem;
+};
+
+export type UpdateActionApiV1LookupActionsActionIdPatchResponse =
+  UpdateActionApiV1LookupActionsActionIdPatchResponses[keyof UpdateActionApiV1LookupActionsActionIdPatchResponses];
 
 export type HealthApiV1HealthGetData = {
   body?: never;
