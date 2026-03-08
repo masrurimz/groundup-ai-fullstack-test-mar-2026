@@ -50,7 +50,7 @@ import {
   reasonsQueryOptions,
   useCreateReasonMutation,
   useUpdateReasonMutation,
-} from "../lib/query/options";
+} from "../lib/query";
 
 export const Route = createFileRoute("/settings/reasons")({
   loader: ({ context: { queryClient } }) => {

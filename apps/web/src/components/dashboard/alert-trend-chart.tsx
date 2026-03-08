@@ -1,7 +1,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
-import type { AlertTrendPoint } from "@/lib/api/use-dashboard-api";
+import type { AlertTrendPoint } from "@/lib/api-client";
 
 const chartConfig = {
   count: {

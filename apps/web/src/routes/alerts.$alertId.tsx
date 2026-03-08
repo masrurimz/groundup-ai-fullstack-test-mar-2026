@@ -36,11 +36,7 @@ import {
 } from "../lib/api/alert-assets";
 import type { AlertView } from "../lib/api/alert-view";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
-import {
-  actionsQueryOptions,
-  reasonsQueryOptions,
-  useUpdateAlertMutation,
-} from "../lib/query/options";
+import { actionsQueryOptions, reasonsQueryOptions, useUpdateAlertMutation } from "../lib/query";
 
 export const Route = createFileRoute("/alerts/$alertId")({
   component: AlertDetailPage,

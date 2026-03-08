@@ -11,7 +11,7 @@ import {
   useCreateMachineMutation,
   useUpdateMachineMutation,
   useUpdateAlertMutation,
-} from "@/lib/query/options";
+} from "@/lib/query";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: "http://localhost:8000" });

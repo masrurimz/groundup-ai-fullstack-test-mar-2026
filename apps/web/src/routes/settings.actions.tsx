@@ -42,7 +42,7 @@ import {
   actionsQueryOptions,
   useCreateActionMutation,
   useUpdateActionMutation,
-} from "../lib/query/options";
+} from "../lib/query";
 
 export const Route = createFileRoute("/settings/actions")({
   loader: ({ context: { queryClient } }) =>

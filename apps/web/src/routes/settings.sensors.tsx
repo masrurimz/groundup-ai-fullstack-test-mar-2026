@@ -50,7 +50,7 @@ import {
   sensorsQueryOptions,
   useCreateSensorMutation,
   useUpdateSensorMutation,
-} from "../lib/query/options";
+} from "../lib/query";
 
 export const Route = createFileRoute("/settings/sensors")({
   loader: ({ context: { queryClient } }) => {

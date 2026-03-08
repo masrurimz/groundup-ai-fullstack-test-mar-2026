@@ -42,7 +42,7 @@ import {
   machinesQueryOptions,
   useCreateMachineMutation,
   useUpdateMachineMutation,
-} from "../lib/query/options";
+} from "../lib/query";
 
 export const Route = createFileRoute("/settings/machines")({
   loader: ({ context: { queryClient } }) =>

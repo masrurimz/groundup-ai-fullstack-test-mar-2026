@@ -1,4 +1,4 @@
-import type { MachineHealthSummary } from "@/lib/api/use-dashboard-api";
+import type { MachineHealthSummary } from "@/lib/api-client";
 
 function statusColor(summary: MachineHealthSummary): string {
   if (summary.critical_count > 0) return "bg-red-500";

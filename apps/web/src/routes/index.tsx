@@ -10,11 +10,12 @@ import {
 } from "../components/dashboard";
 import { AlertCircle, Zap, Activity, CheckCircle } from "lucide-react";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
+import { useQuery } from "@tanstack/react-query";
 import {
-  useDashboardOverview,
-  useAlertTrends,
-  useMachineHealth,
-} from "../lib/api/use-dashboard-api";
+  overviewQueryOptions,
+  alertTrendsQueryOptions,
+  machineHealthQueryOptions,
+} from "../lib/query";
 
 export const Route = createFileRoute("/")({
   component: DashboardComponent,
@@ -25,9 +26,9 @@ function DashboardComponent() {
   const [days, setDays] = useState(30);
 
   const { alerts, isLoading: alertsLoading } = useAlertsApi();
-  const overviewQuery = useDashboardOverview();
-  const trendsQuery = useAlertTrends(days);
-  const machineHealthQuery = useMachineHealth();
+  const overviewQuery = useQuery(overviewQueryOptions());
+  const trendsQuery = useQuery(alertTrendsQueryOptions(days));
+  const machineHealthQuery = useQuery(machineHealthQueryOptions());
 
   const overview = overviewQuery.data;
 
@@ -72,7 +73,7 @@ function DashboardComponent() {
           />
           <StatsCard
             title="Resolution Rate"
-            value={`${Math.round((overview?.resolved_rate ?? 0) * 100)}%`}
+            value={`${Math.round(overview?.resolved_rate ?? 0)}%`}
             icon={<CheckCircle className="h-6 w-6" />}
             description={`${overview?.warning_alerts ?? 0} warnings active`}
             variant="default"

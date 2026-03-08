@@ -1,4 +1,4 @@
-import type { DashboardOverview } from "@/lib/api/use-dashboard-api";
+import type { DashboardOverview } from "@/lib/api-client";
 
 interface SystemHealthBannerProps {
   overview: DashboardOverview | undefined;
@@ -36,7 +36,7 @@ export function SystemHealthBanner({ overview, isLoading }: SystemHealthBannerPr
       <div className="flex flex-wrap gap-2">
         <Chip label="Machines" value={overview?.total_machines ?? 0} />
         <Chip label="Active" value={overview?.active_machines ?? 0} />
-        <Chip label="Resolved" value={`${Math.round((overview?.resolved_rate ?? 0) * 100)}%`} />
+        <Chip label="Resolved" value={`${Math.round(overview?.resolved_rate ?? 0)}%`} />
       </div>
     </div>
   );
