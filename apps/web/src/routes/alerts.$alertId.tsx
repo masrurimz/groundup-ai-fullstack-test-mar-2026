@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { PlayCircle, Volume2 } from "lucide-react";
+import { Loader2, Pause, Play, Volume2, VolumeX } from "lucide-react";
 
+import {
+  fetchWaveform,
+  getAlertAudioUrl,
+  getAlertSpectrogramUrl,
+  type WaveformResponse,
+} from "../lib/api/alerts";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/$alertId")({
@@ -23,13 +30,29 @@ export const Route = createFileRoute("/alerts/$alertId")({
 function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
-  const { alerts, error } = useAlertsApi();
+  const { alerts, isLoading: alertsLoading, error } = useAlertsApi();
 
   const selectedAlert = useMemo(() => {
     return alerts.find((alert) => alert.id === alertId);
   }, [alerts, alertId]);
 
-  const machineLabel = selectedAlert?.description?.split(" ")[0] ?? "CNC Machine";
+  const machineLabel = selectedAlert?.machine ?? "CNC Machine";
+
+  if (alertsLoading) {
+    return (
+      <section className="min-h-0 overflow-y-auto bg-card p-5 lg:p-8">
+        <div className="mx-auto max-w-[1400px]">
+          <Skeleton className="mb-2 h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+          <div className="my-10 h-px bg-border" />
+          <div className="grid grid-cols-1 gap-16 xl:grid-cols-2">
+            <Skeleton className="h-[460px] rounded-lg" />
+            <Skeleton className="h-[460px] rounded-lg" />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!selectedAlert) {
     return (
@@ -47,7 +70,10 @@ function AlertDetailPage() {
                 API request failed or timed out.
               </p>
             ) : null}
-            <Button className="mt-6" onClick={() => navigate({ to: "/alerts" })}>
+            <Button
+              className="mt-6"
+              onClick={() => navigate({ to: "/alerts", search: { machine: undefined } })}
+            >
               Back To Alerts
             </Button>
           </CardContent>
@@ -60,22 +86,22 @@ function AlertDetailPage() {
     <section className="min-h-0 overflow-y-auto bg-card p-5 lg:p-8">
       <div className="mx-auto max-w-[1400px] pb-12">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">Alert ID #{selectedAlert.id}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-2xl font-semibold text-gray-700">Alert ID #{selectedAlert.id}</h1>
+          <p className="mt-1 text-sm text-gray-400">
             Detected at {formatDateTime(selectedAlert.created_at)}
           </p>
         </div>
         <div className="mb-10 h-px bg-border" />
 
         <div className="mb-12 grid grid-cols-1 gap-16 xl:grid-cols-2">
-          <ChartPanel title="Anomaly Machine Output" />
-          <ChartPanel title="Normal Machine Output" tonedDown />
+          <AnomalyPanel alertId={alertId} />
+          <BaselinePlaceholderPanel />
         </div>
 
         <div className="space-y-8 pb-12">
           <div>
-            <h4 className="text-sm font-bold uppercase tracking-wide text-foreground">Equipment</h4>
-            <p className="mt-1 text-sm text-muted-foreground">{machineLabel}</p>
+            <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Equipment</h4>
+            <p className="mt-1 text-sm text-gray-600">{machineLabel}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -112,89 +138,345 @@ function AlertDetailPage() {
   );
 }
 
-function ChartPanel({ title, tonedDown = false }: { title: string; tonedDown?: boolean }) {
-  const waveformClip = tonedDown
-    ? "polygon(0% 48%, 2% 52%, 4% 45%, 6% 55%, 8% 40%, 10% 60%, 100% 50%, 0% 50%)"
-    : "polygon(0% 45%, 5% 40%, 10% 60%, 15% 30%, 20% 70%, 25% 40%, 30% 60%, 35% 20%, 40% 80%, 45% 40%, 50% 60%, 55% 10%, 60% 90%, 65% 30%, 70% 70%, 75% 40%, 80% 60%, 85% 20%, 90% 80%, 95% 40%, 100% 50%)";
-  const waveformHeight = tonedDown ? "h-2/5" : "h-3/4";
+// ---------------------------------------------------------------------------
+// Anomaly Panel – real data from API
+// ---------------------------------------------------------------------------
+
+function AnomalyPanel({ alertId }: { alertId: string }) {
+  const [waveform, setWaveform] = useState<WaveformResponse | null>(null);
+  const [waveformLoading, setWaveformLoading] = useState(true);
+  const [waveformError, setWaveformError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setWaveformLoading(true);
+    setWaveformError(false);
+
+    fetchWaveform(alertId)
+      .then((data) => {
+        if (!cancelled) setWaveform(data);
+      })
+      .catch(() => {
+        if (!cancelled) setWaveformError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setWaveformLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [alertId]);
 
   return (
     <div>
-      <h3 className="mb-6 text-lg font-medium text-foreground">{title}</h3>
-
-      <div className="mb-6 inline-flex w-fit items-center gap-3 rounded-lg bg-muted p-2">
-        <button type="button" className="text-foreground hover:text-foreground/80">
-          <PlayCircle className="h-5 w-5" />
-        </button>
-        <span className="font-mono text-[11px] text-muted-foreground">0:09 / 0:35</span>
-        <div className="relative h-1 w-24 overflow-hidden rounded-full bg-border">
-          <div className="absolute inset-y-0 left-0 w-1/4 bg-foreground" />
-        </div>
-        <Volume2 className="h-4 w-4 text-muted-foreground" />
+      <h3 className="mb-6 text-lg font-medium text-foreground">Anomaly Machine Output</h3>
+      <AudioPlayer alertId={alertId} duration={waveform?.duration_seconds} />
+      <div className="mt-6 space-y-4">
+        <WaveformChart waveform={waveform} isLoading={waveformLoading} hasError={waveformError} />
+        <SpectrogramImage alertId={alertId} duration={waveform?.duration_seconds} />
       </div>
+    </div>
+  );
+}
 
-      <div className="space-y-4">
-        {/* Waveform */}
-        <div className="relative h-48 border-b border-l border-border">
-          <div className="absolute -left-10 bottom-0 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
-            <span>AMP</span>
-            <span>0.75</span>
-            <span>0.50</span>
-            <span>0.25</span>
-            <span>0.00</span>
-            <span>-0.25</span>
-            <span>-0.50</span>
-            <span>-0.75</span>
-          </div>
-          <div className="flex h-full w-full items-center overflow-hidden px-1">
-            <div
-              className={cn("w-full bg-[#3078a6] opacity-90", waveformHeight)}
-              style={{ clipPath: waveformClip }}
-            />
-          </div>
-        </div>
+// ---------------------------------------------------------------------------
+// Baseline Placeholder Panel
+// ---------------------------------------------------------------------------
 
-        {/* Spectrogram */}
-        <div className="relative h-64 border-b border-l border-border">
-          <div className="absolute -left-10 bottom-0 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
-            <span>8192</span>
-            <span>4096</span>
-            <span>2048</span>
-            <span>1024</span>
-            <span>512</span>
-            <span>0</span>
-          </div>
-          <div
-            className={cn(
-              "h-full w-full overflow-hidden bg-gradient-to-t from-[#240b36] via-[#c31432] to-[#ed8f03]",
-              tonedDown ? "opacity-60" : "opacity-80 mix-blend-multiply",
-            )}
-          >
-            <div className="h-full w-full bg-[radial-gradient(circle,rgba(255,255,255,0.2)_1px,transparent_1px)] opacity-20 [background-size:2px_2px]" />
-            {!tonedDown && (
-              <>
-                <div className="absolute left-0 right-0 top-[80%] h-2 bg-yellow-400 opacity-40 blur-[1px]" />
-                <div className="absolute left-0 right-0 top-[10%] h-1 bg-yellow-300 opacity-30 blur-[1px]" />
-              </>
-            )}
-          </div>
-          <div className="absolute -bottom-6 left-0 right-0 flex justify-between px-1 text-[10px] font-medium text-muted-foreground">
-            <span>0</span>
-            <span>6</span>
-            <span>12</span>
-            <span>18</span>
-            <span>24</span>
-            <span>30</span>
-            <span>36</span>
-            <span>42</span>
-            <span>48</span>
-            <span>54</span>
-          </div>
+function BaselinePlaceholderPanel() {
+  return (
+    <div>
+      <h3 className="mb-6 text-lg font-medium text-foreground">Normal Machine Output</h3>
+      <div className="flex h-[420px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
+        <div className="text-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            Baseline reference audio is not available for this alert.
+          </p>
+          <span className="mt-2 inline-block rounded-full bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Coming soon
+          </span>
         </div>
       </div>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Audio Player
+// ---------------------------------------------------------------------------
+
+function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; duration?: number }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onLoaded = () => {
+      setDuration(audio.duration);
+      setIsReady(true);
+    };
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onEnded = () => setIsPlaying(false);
+    const onError = () => setIsReady(false);
+
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+    };
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      void audio.play();
+    }
+    setIsPlaying(!isPlaying);
+  }, [isPlaying]);
+
+  const toggleMute = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = !isMuted;
+    setIsMuted(!isMuted);
+  }, [isMuted]);
+
+  const seek = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const audio = audioRef.current;
+      if (!audio || !duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      audio.currentTime = ratio * duration;
+    },
+    [duration],
+  );
+
+  const displayDuration = duration || apiDuration || 0;
+  const progress = displayDuration > 0 ? (currentTime / displayDuration) * 100 : 0;
+
+  return (
+    <div className="inline-flex w-fit items-center gap-3 rounded-lg bg-muted p-2">
+      <audio ref={audioRef} src={getAlertAudioUrl(alertId)} preload="metadata" />
+
+      <button
+        type="button"
+        className="text-foreground transition-colors hover:text-foreground/80 disabled:opacity-40"
+        onClick={togglePlay}
+        disabled={!isReady}
+      >
+        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+      </button>
+
+      <span className="min-w-[72px] font-mono text-[11px] text-muted-foreground">
+        {formatTime(currentTime)} / {formatTime(displayDuration)}
+      </span>
+
+      <div
+        className="relative h-1.5 w-28 cursor-pointer overflow-hidden rounded-full bg-border"
+        onClick={seek}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-[width] duration-100"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <button
+        type="button"
+        className="text-muted-foreground transition-colors hover:text-foreground"
+        onClick={toggleMute}
+      >
+        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Waveform Chart – SVG rendered from real API data
+// ---------------------------------------------------------------------------
+
+const WAVEFORM_Y_MIN = -0.75;
+const WAVEFORM_Y_MAX = 0.75;
+const WAVEFORM_WIDTH = 800;
+const WAVEFORM_HEIGHT = 192;
+
+function buildWaveformPath(waveform: WaveformResponse): string {
+  const { times, amplitudes, duration_seconds } = waveform;
+  if (!times.length || !amplitudes.length) return "";
+
+  const len = Math.min(times.length, amplitudes.length);
+
+  // Downsample if too many points
+  const maxPoints = WAVEFORM_WIDTH;
+  const step = len > maxPoints ? Math.ceil(len / maxPoints) : 1;
+
+  const x = (t: number) => (t / duration_seconds) * WAVEFORM_WIDTH;
+  const y = (a: number) => {
+    const clamped = Math.max(WAVEFORM_Y_MIN, Math.min(WAVEFORM_Y_MAX, a));
+    return (
+      WAVEFORM_HEIGHT -
+      ((clamped - WAVEFORM_Y_MIN) / (WAVEFORM_Y_MAX - WAVEFORM_Y_MIN)) * WAVEFORM_HEIGHT
+    );
+  };
+
+  const parts: string[] = [];
+  for (let i = 0; i < len; i += step) {
+    const cmd = i === 0 ? "M" : "L";
+    parts.push(`${cmd}${x(times[i]!).toFixed(1)} ${y(amplitudes[i]!).toFixed(1)}`);
+  }
+
+  return parts.join(" ");
+}
+
+const Y_AXIS_LABELS = ["0.75", "0.50", "0.25", "0.00", "-0.25", "-0.50", "-0.75"];
+
+function WaveformChart({
+  waveform,
+  isLoading,
+  hasError,
+}: {
+  waveform: WaveformResponse | null;
+  isLoading: boolean;
+  hasError: boolean;
+}) {
+  const path = useMemo(() => (waveform ? buildWaveformPath(waveform) : ""), [waveform]);
+
+  return (
+    <div className="relative h-48 border-b border-l border-border">
+      <div className="absolute -left-10 bottom-0 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
+        <span>AMP</span>
+        {Y_AXIS_LABELS.map((label) => (
+          <span key={label}>{label}</span>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="flex h-full items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : hasError || !waveform ? (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-xs text-muted-foreground">Unable to load waveform data</p>
+        </div>
+      ) : (
+        <svg
+          viewBox={`0 0 ${WAVEFORM_WIDTH} ${WAVEFORM_HEIGHT}`}
+          preserveAspectRatio="none"
+          className="h-full w-full"
+        >
+          {/* Zero baseline */}
+          <line
+            x1="0"
+            y1={WAVEFORM_HEIGHT / 2}
+            x2={WAVEFORM_WIDTH}
+            y2={WAVEFORM_HEIGHT / 2}
+            stroke="currentColor"
+            className="text-border"
+            strokeWidth="0.5"
+            strokeDasharray="4 4"
+          />
+          {/* Waveform path */}
+          <path
+            d={path}
+            fill="none"
+            stroke="#3078a6"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Spectrogram Image – real PNG from API
+// ---------------------------------------------------------------------------
+
+function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: number }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const spectrogramUrl = getAlertSpectrogramUrl(alertId);
+
+  // Generate time axis labels from actual duration
+  const timeLabels = useMemo(() => {
+    const dur = duration ?? 54;
+    const count = 10;
+    const step = dur / count;
+    return Array.from({ length: count + 1 }, (_, i) => Math.round(i * step));
+  }, [duration]);
+
+  return (
+    <div className="relative border-b border-l border-border pb-6">
+      {/* Y-axis labels */}
+      <div className="absolute -left-10 bottom-6 top-0 flex flex-col justify-between py-1 text-[10px] font-medium text-muted-foreground">
+        <span>8192</span>
+        <span>4096</span>
+        <span>2048</span>
+        <span>1024</span>
+        <span>512</span>
+        <span>0</span>
+      </div>
+
+      {/* Spectrogram image area */}
+      <div className="relative h-64 overflow-hidden bg-gray-950">
+        {!imgLoaded && !imgError && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {imgError ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-xs text-muted-foreground">Unable to load spectrogram</p>
+          </div>
+        ) : (
+          <img
+            src={spectrogramUrl}
+            alt="Mel spectrogram for this alert"
+            className={cn(
+              "h-full w-full object-fill transition-opacity duration-300",
+              imgLoaded ? "opacity-100" : "opacity-0",
+            )}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
+          />
+        )}
+      </div>
+
+      {/* X-axis time labels */}
+      <div className="absolute -bottom-0 left-0 right-0 flex justify-between px-1 text-[10px] font-medium text-muted-foreground">
+        {timeLabels.map((t) => (
+          <span key={t}>{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Select Field
+// ---------------------------------------------------------------------------
 
 function SelectField({ label, options }: { label: string; options: string[] }) {
   return (
@@ -218,6 +500,16 @@ function SelectField({ label, options }: { label: string; options: string[] }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function formatDateTime(date: string): string {
   return new Date(date).toLocaleString();
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }

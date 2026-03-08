@@ -14,10 +14,15 @@ import {
 import { AlertListItem } from "./alert-list-item";
 import type { AlertItem } from "./types";
 
+const ALL_MACHINES = "__all__";
+
 interface AlertsSidebarProps {
   alerts: AlertItem[];
   selectedAlertId?: string;
-  machineLabel: string;
+  machineOptions: string[];
+  selectedMachine: string;
+  newAlertCount: number;
+  onMachineChange: (machine: string) => void;
   onBack: () => void;
   onSelectAlert: (alertId: string) => void;
 }
@@ -25,7 +30,10 @@ interface AlertsSidebarProps {
 export function AlertsSidebar({
   alerts,
   selectedAlertId,
-  machineLabel,
+  machineOptions,
+  selectedMachine,
+  newAlertCount,
+  onMachineChange,
   onBack,
   onSelectAlert,
 }: AlertsSidebarProps) {
@@ -33,13 +41,22 @@ export function AlertsSidebar({
     <aside className="flex max-h-[45vh] min-h-0 flex-col border-b border-border bg-card lg:max-h-none lg:border-r lg:border-b-0">
       {/* Machine Selector */}
       <div className="border-b border-border p-4">
-        <Select defaultValue={machineLabel}>
+        <Select
+          value={selectedMachine}
+          onValueChange={(value) => {
+            if (value != null) onMachineChange(value);
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="CNC Machine">CNC Machine</SelectItem>
-            <SelectItem value="Miling Machine">Miling Machine</SelectItem>
+            <SelectItem value={ALL_MACHINES}>All Machines</SelectItem>
+            {machineOptions.map((name) => (
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -60,9 +77,11 @@ export function AlertsSidebar({
       {/* Alert Count */}
       <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
         <p className="text-sm font-medium text-muted-foreground">{alerts.length} Alerts</p>
-        <Badge className="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
-          2 New
-        </Badge>
+        {newAlertCount > 0 && (
+          <Badge className="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
+            {newAlertCount} New
+          </Badge>
+        )}
       </div>
 
       {/* Alert List */}
@@ -73,7 +92,6 @@ export function AlertsSidebar({
               key={alert.id}
               alert={alert}
               active={alert.id === selectedAlertId}
-              machineLabel={machineLabel}
               onSelect={onSelectAlert}
             />
           ))}
