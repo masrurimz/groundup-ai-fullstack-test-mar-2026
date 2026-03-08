@@ -2,6 +2,7 @@ import type { AlertResponse as Alert } from "../api-client";
 
 export type AlertView = {
   id: string;
+  serial_number: number;
   title: string;
   description: string;
   severity: string;
@@ -9,14 +10,14 @@ export type AlertView = {
   created_at: string;
   updated_at: string;
   machine: string;
-  machine_id: number | null;
+  machine_id: string | null;
   anomaly_type: string;
   sensor: string;
   sound_clip: string;
   suspected_reason: string | null;
-  suspected_reason_id: number | null;
+  suspected_reason_id: string | null;
   action: string | null;
-  action_id: number | null;
+  action_id: string | null;
   comment: string | null;
 };
 
@@ -33,7 +34,8 @@ function mapSeverity(anomalyType: string): string {
 
 export function toAlertView(alert: Alert): AlertView {
   return {
-    id: `${alert.id}`,
+    id: alert.id,
+    serial_number: alert.serial_number,
     title: `${alert.machine} ${alert.anomaly_type}`,
     description: `${alert.machine} sensor ${alert.sensor}`,
     severity: mapSeverity(alert.anomaly_type),

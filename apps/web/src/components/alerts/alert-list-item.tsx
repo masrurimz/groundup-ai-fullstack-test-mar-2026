@@ -35,7 +35,9 @@ export function AlertListItem({ alert, active, onSelect }: AlertListItemProps) {
                   isNew ? "bg-blue-500" : "border border-border",
                 )}
               />
-              <span className="text-xs font-semibold text-muted-foreground">ID #{alert.id}</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                #{alert.serial_number}
+              </span>
             </div>
             <SeverityBadge severity={alert.severity} />
           </div>

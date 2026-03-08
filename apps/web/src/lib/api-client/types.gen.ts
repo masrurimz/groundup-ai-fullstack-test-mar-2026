@@ -21,7 +21,7 @@ export type ActionResponse = {
   /**
    * Id
    */
-  id: number;
+  id: string;
   /**
    * Key
    */
@@ -57,7 +57,11 @@ export type AlertResponse = {
   /**
    * Id
    */
-  id: number;
+  id: string;
+  /**
+   * Serial Number
+   */
+  serial_number: number;
   /**
    * Timestamp
    */
@@ -69,7 +73,7 @@ export type AlertResponse = {
   /**
    * Machine Id
    */
-  machine_id: number | null;
+  machine_id: string | null;
   /**
    * Anomaly Type
    */
@@ -78,6 +82,10 @@ export type AlertResponse = {
    * Sensor
    */
   sensor: string;
+  /**
+   * Sensor Id
+   */
+  sensor_id: string | null;
   /**
    * Sound Clip
    */
@@ -89,7 +97,7 @@ export type AlertResponse = {
   /**
    * Suspected Reason Id
    */
-  suspected_reason_id: number | null;
+  suspected_reason_id: string | null;
   /**
    * Action
    */
@@ -97,7 +105,7 @@ export type AlertResponse = {
   /**
    * Action Id
    */
-  action_id: number | null;
+  action_id: string | null;
   /**
    * Comment
    */
@@ -119,11 +127,11 @@ export type AlertUpdateRequest = {
   /**
    * Suspected Reason Id
    */
-  suspected_reason_id?: number | null;
+  suspected_reason_id?: string | null;
   /**
    * Action Id
    */
-  action_id?: number | null;
+  action_id?: string | null;
   /**
    * Comment
    */
@@ -157,7 +165,7 @@ export type MachineResponse = {
   /**
    * Id
    */
-  id: number;
+  id: string;
   /**
    * Key
    */
@@ -193,7 +201,7 @@ export type ReasonCreateRequest = {
   /**
    * Machine Id
    */
-  machine_id: number;
+  machine_id: string;
   /**
    * Reason
    */
@@ -207,7 +215,7 @@ export type ReasonResponse = {
   /**
    * Id
    */
-  id: number;
+  id: string;
   /**
    * Key
    */
@@ -223,7 +231,7 @@ export type ReasonResponse = {
   /**
    * Machine Id
    */
-  machine_id: number;
+  machine_id: string;
   /**
    * Machine Name
    */
@@ -238,6 +246,76 @@ export type ReasonUpdateRequest = {
    * Reason
    */
   reason?: string | null;
+  /**
+   * Is Active
+   */
+  is_active?: boolean | null;
+};
+
+/**
+ * SensorCreateRequest
+ */
+export type SensorCreateRequest = {
+  /**
+   * Machine Id
+   */
+  machine_id: string;
+  /**
+   * Serial
+   */
+  serial: string;
+  /**
+   * Name
+   */
+  name: string;
+};
+
+/**
+ * SensorResponse
+ */
+export type SensorResponse = {
+  /**
+   * Id
+   */
+  id: string;
+  /**
+   * Key
+   */
+  key: string;
+  /**
+   * Serial
+   */
+  serial: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Is Active
+   */
+  is_active: boolean;
+  /**
+   * Machine Id
+   */
+  machine_id: string;
+  /**
+   * Machine Name
+   */
+  machine_name: string;
+};
+
+/**
+ * SensorUpdateRequest
+ */
+export type SensorUpdateRequest = {
+  /**
+   * Name
+   */
+  name?: string | null;
+  /**
+   * Serial
+   */
+  serial?: string | null;
   /**
    * Is Active
    */
@@ -279,7 +357,7 @@ export type WaveformResponse = {
   /**
    * Alert Id
    */
-  alert_id: number;
+  alert_id: string;
   /**
    * Sample Rate
    */
@@ -350,7 +428,7 @@ export type GetAlertApiV1AlertsAlertIdGetData = {
     /**
      * Alert Id
      */
-    alert_id: number;
+    alert_id: string;
   };
   query?: never;
   url: "/api/v1/alerts/{alert_id}";
@@ -382,7 +460,7 @@ export type UpdateAlertApiV1AlertsAlertIdPatchData = {
     /**
      * Alert Id
      */
-    alert_id: number;
+    alert_id: string;
   };
   query?: never;
   url: "/api/v1/alerts/{alert_id}";
@@ -414,7 +492,7 @@ export type GetAudioApiV1AlertsAlertIdAudioGetData = {
     /**
      * Alert Id
      */
-    alert_id: number;
+    alert_id: string;
   };
   query?: never;
   url: "/api/v1/alerts/{alert_id}/audio";
@@ -443,7 +521,7 @@ export type GetWaveformApiV1AlertsAlertIdWaveformGetData = {
     /**
      * Alert Id
      */
-    alert_id: number;
+    alert_id: string;
   };
   query?: never;
   url: "/api/v1/alerts/{alert_id}/waveform";
@@ -475,7 +553,7 @@ export type GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData = {
     /**
      * Alert Id
      */
-    alert_id: number;
+    alert_id: string;
   };
   query?: never;
   url: "/api/v1/alerts/{alert_id}/spectrogram";
@@ -492,6 +570,96 @@ export type GetSpectrogramApiV1AlertsAlertIdSpectrogramGetError =
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors[keyof GetSpectrogramApiV1AlertsAlertIdSpectrogramGetErrors];
 
 export type GetSpectrogramApiV1AlertsAlertIdSpectrogramGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/audio";
+};
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError =
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors[keyof GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetErrors];
+
+export type GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/waveform";
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError =
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors[keyof GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetErrors];
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: WaveformResponse;
+};
+
+export type GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse =
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses[keyof GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponses];
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData = {
+  body?: never;
+  path: {
+    /**
+     * Alert Id
+     */
+    alert_id: string;
+  };
+  query?: never;
+  url: "/api/v1/alerts/{alert_id}/baseline/spectrogram";
+};
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError =
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors[keyof GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetErrors];
+
+export type GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetResponses = {
   /**
    * Successful Response
    */
@@ -565,7 +733,7 @@ export type UpdateMachineApiV1LookupMachinesMachineIdPatchData = {
     /**
      * Machine Id
      */
-    machine_id: number;
+    machine_id: string;
   };
   query?: never;
   url: "/api/v1/lookup/machines/{machine_id}";
@@ -598,7 +766,7 @@ export type GetReasonsApiV1LookupReasonsGetData = {
     /**
      * Machine Id
      */
-    machine_id?: number | null;
+    machine_id?: string | null;
     /**
      * Machine
      */
@@ -666,7 +834,7 @@ export type UpdateReasonApiV1LookupReasonsReasonIdPatchData = {
     /**
      * Reason Id
      */
-    reason_id: number;
+    reason_id: string;
   };
   query?: never;
   url: "/api/v1/lookup/reasons/{reason_id}";
@@ -759,7 +927,7 @@ export type UpdateActionApiV1LookupActionsActionIdPatchData = {
     /**
      * Action Id
      */
-    action_id: number;
+    action_id: string;
   };
   query?: never;
   url: "/api/v1/lookup/actions/{action_id}";
@@ -784,6 +952,107 @@ export type UpdateActionApiV1LookupActionsActionIdPatchResponses = {
 
 export type UpdateActionApiV1LookupActionsActionIdPatchResponse =
   UpdateActionApiV1LookupActionsActionIdPatchResponses[keyof UpdateActionApiV1LookupActionsActionIdPatchResponses];
+
+export type GetSensorsApiV1LookupSensorsGetData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Machine Id
+     */
+    machine_id?: string | null;
+    /**
+     * Machine
+     */
+    machine?: string | null;
+    /**
+     * Include Inactive
+     */
+    include_inactive?: boolean;
+  };
+  url: "/api/v1/lookup/sensors";
+};
+
+export type GetSensorsApiV1LookupSensorsGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetSensorsApiV1LookupSensorsGetError =
+  GetSensorsApiV1LookupSensorsGetErrors[keyof GetSensorsApiV1LookupSensorsGetErrors];
+
+export type GetSensorsApiV1LookupSensorsGetResponses = {
+  /**
+   * Response Get Sensors Api V1 Lookup Sensors Get
+   *
+   * Successful Response
+   */
+  200: Array<SensorResponse>;
+};
+
+export type GetSensorsApiV1LookupSensorsGetResponse =
+  GetSensorsApiV1LookupSensorsGetResponses[keyof GetSensorsApiV1LookupSensorsGetResponses];
+
+export type CreateSensorApiV1LookupSensorsPostData = {
+  body: SensorCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/api/v1/lookup/sensors";
+};
+
+export type CreateSensorApiV1LookupSensorsPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateSensorApiV1LookupSensorsPostError =
+  CreateSensorApiV1LookupSensorsPostErrors[keyof CreateSensorApiV1LookupSensorsPostErrors];
+
+export type CreateSensorApiV1LookupSensorsPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: SensorResponse;
+};
+
+export type CreateSensorApiV1LookupSensorsPostResponse =
+  CreateSensorApiV1LookupSensorsPostResponses[keyof CreateSensorApiV1LookupSensorsPostResponses];
+
+export type UpdateSensorApiV1LookupSensorsSensorIdPatchData = {
+  body: SensorUpdateRequest;
+  path: {
+    /**
+     * Sensor Id
+     */
+    sensor_id: string;
+  };
+  query?: never;
+  url: "/api/v1/lookup/sensors/{sensor_id}";
+};
+
+export type UpdateSensorApiV1LookupSensorsSensorIdPatchErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateSensorApiV1LookupSensorsSensorIdPatchError =
+  UpdateSensorApiV1LookupSensorsSensorIdPatchErrors[keyof UpdateSensorApiV1LookupSensorsSensorIdPatchErrors];
+
+export type UpdateSensorApiV1LookupSensorsSensorIdPatchResponses = {
+  /**
+   * Successful Response
+   */
+  200: SensorResponse;
+};
+
+export type UpdateSensorApiV1LookupSensorsSensorIdPatchResponse =
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponses[keyof UpdateSensorApiV1LookupSensorsSensorIdPatchResponses];
 
 export type HealthApiV1HealthGetData = {
   body?: never;

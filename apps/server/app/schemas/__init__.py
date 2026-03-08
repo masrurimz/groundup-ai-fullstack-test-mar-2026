@@ -1,4 +1,5 @@
 from .alerts import AlertListQuery, AlertResponse, AlertUpdateRequest, WaveformResponse
+from .analytics import AlertTrendPoint, DashboardOverview, MachineHealthSummary
 from .lookup import (
     ActionCreateRequest,
     ActionResponse,
@@ -9,6 +10,9 @@ from .lookup import (
     ReasonCreateRequest,
     ReasonResponse,
     ReasonUpdateRequest,
+    SensorCreateRequest,
+    SensorResponse,
+    SensorUpdateRequest,
 )
 
 __all__ = [
@@ -17,12 +21,18 @@ __all__ = [
     "ActionUpdateRequest",
     "AlertListQuery",
     "AlertResponse",
+    "AlertTrendPoint",
     "AlertUpdateRequest",
+    "DashboardOverview",
     "MachineCreateRequest",
+    "MachineHealthSummary",
     "MachineResponse",
     "MachineUpdateRequest",
     "ReasonCreateRequest",
     "ReasonResponse",
     "ReasonUpdateRequest",
+    "SensorCreateRequest",
+    "SensorResponse",
+    "SensorUpdateRequest",
     "WaveformResponse",
 ]

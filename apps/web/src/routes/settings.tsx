@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: "/settings/machines", label: "Machines" },
   { to: "/settings/reasons", label: "Reasons" },
   { to: "/settings/actions", label: "Actions" },
+  { to: "/settings/sensors", label: "Sensors" },
 ] as const;
 
 function SettingsLayout() {

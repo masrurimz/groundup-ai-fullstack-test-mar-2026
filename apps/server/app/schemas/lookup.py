@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -6,26 +8,36 @@ def _normalize_text(value: str) -> str:
 
 
 class MachineResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     key: str
     name: str
     is_active: bool
 
 
 class ReasonResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     key: str
     reason: str
     is_active: bool
-    machine_id: int
+    machine_id: uuid.UUID
     machine_name: str
 
 
 class ActionResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     key: str
     action: str
     is_active: bool
+
+
+class SensorResponse(BaseModel):
+    id: uuid.UUID
+    key: str
+    serial: str
+    name: str
+    is_active: bool
+    machine_id: uuid.UUID
+    machine_name: str
 
 
 class MachineCreateRequest(BaseModel):
@@ -62,7 +74,7 @@ class MachineUpdateRequest(BaseModel):
 
 
 class ReasonCreateRequest(BaseModel):
-    machine_id: int
+    machine_id: uuid.UUID
     reason: str = Field(min_length=1, max_length=255)
 
     @field_validator("reason")
@@ -124,5 +136,59 @@ class ActionUpdateRequest(BaseModel):
     @model_validator(mode="after")
     def ensure_non_empty_update(self) -> "ActionUpdateRequest":
         if self.action is None and self.is_active is None:
+            raise ValueError("at least one field must be provided")
+        return self
+
+
+class SensorCreateRequest(BaseModel):
+    machine_id: uuid.UUID
+    serial: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("serial")
+    @classmethod
+    def normalize_serial(cls, value: str) -> str:
+        normalized = _normalize_text(value)
+        if not normalized:
+            raise ValueError("serial is required")
+        return normalized
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = _normalize_text(value)
+        if not normalized:
+            raise ValueError("name is required")
+        return normalized
+
+
+class SensorUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    serial: str | None = Field(default=None, min_length=1, max_length=100)
+    is_active: bool | None = None
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = _normalize_text(value)
+        if not normalized:
+            raise ValueError("name cannot be empty")
+        return normalized
+
+    @field_validator("serial")
+    @classmethod
+    def normalize_serial(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = _normalize_text(value)
+        if not normalized:
+            raise ValueError("serial cannot be empty")
+        return normalized
+
+    @model_validator(mode="after")
+    def ensure_non_empty_update(self) -> "SensorUpdateRequest":
+        if self.name is None and self.serial is None and self.is_active is None:
             raise ValueError("at least one field must be provided")
         return self

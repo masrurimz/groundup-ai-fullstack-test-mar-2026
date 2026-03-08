@@ -117,7 +117,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Alert Id"
             }
           }
@@ -155,7 +156,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Alert Id"
             }
           }
@@ -205,7 +207,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Alert Id"
             }
           }
@@ -243,7 +246,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Alert Id"
             }
           }
@@ -283,7 +287,127 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{alert_id}/baseline/audio": {
+      "get": {
+        "tags": ["alerts"],
+        "summary": "Get Baseline Audio",
+        "operationId": "get_baseline_audio_api_v1_alerts__alert_id__baseline_audio_get",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{alert_id}/baseline/waveform": {
+      "get": {
+        "tags": ["alerts"],
+        "summary": "Get Baseline Waveform",
+        "operationId": "get_baseline_waveform_api_v1_alerts__alert_id__baseline_waveform_get",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaveformResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{alert_id}/baseline/spectrogram": {
+      "get": {
+        "tags": ["alerts"],
+        "summary": "Get Baseline Spectrogram",
+        "operationId": "get_baseline_spectrogram_api_v1_alerts__alert_id__baseline_spectrogram_get",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
               "title": "Alert Id"
             }
           }
@@ -403,7 +527,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Machine Id"
             }
           }
@@ -455,7 +580,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 {
                   "type": "null"
@@ -567,7 +693,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Reason Id"
             }
           }
@@ -699,7 +826,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Action Id"
             }
           }
@@ -721,6 +849,172 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ActionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lookup/sensors": {
+      "get": {
+        "tags": ["lookup"],
+        "summary": "Get Sensors",
+        "operationId": "get_sensors_api_v1_lookup_sensors_get",
+        "parameters": [
+          {
+            "name": "machine_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Machine Id"
+            }
+          },
+          {
+            "name": "machine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Machine"
+            }
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Inactive"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SensorResponse"
+                  },
+                  "title": "Response Get Sensors Api V1 Lookup Sensors Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["lookup"],
+        "summary": "Create Sensor",
+        "operationId": "create_sensor_api_v1_lookup_sensors_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SensorCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lookup/sensors/{sensor_id}": {
+      "patch": {
+        "tags": ["lookup"],
+        "summary": "Update Sensor",
+        "operationId": "update_sensor_api_v1_lookup_sensors__sensor_id__patch",
+        "parameters": [
+          {
+            "name": "sensor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sensor Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SensorUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensorResponse"
                 }
               }
             }
@@ -803,7 +1097,8 @@
       "ActionResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id"
           },
           "key": {
@@ -856,8 +1151,13 @@
       "AlertResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id"
+          },
+          "serial_number": {
+            "type": "integer",
+            "title": "Serial Number"
           },
           "timestamp": {
             "type": "string",
@@ -871,7 +1171,8 @@
           "machine_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -886,6 +1187,18 @@
           "sensor": {
             "type": "string",
             "title": "Sensor"
+          },
+          "sensor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor Id"
           },
           "sound_clip": {
             "type": "string",
@@ -905,7 +1218,8 @@
           "suspected_reason_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -927,7 +1241,8 @@
           "action_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -973,11 +1288,13 @@
         "type": "object",
         "required": [
           "id",
+          "serial_number",
           "timestamp",
           "machine",
           "machine_id",
           "anomaly_type",
           "sensor",
+          "sensor_id",
           "sound_clip",
           "suspected_reason",
           "suspected_reason_id",
@@ -994,7 +1311,8 @@
           "suspected_reason_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -1005,7 +1323,8 @@
           "action_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -1058,7 +1377,8 @@
       "MachineResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id"
           },
           "key": {
@@ -1111,7 +1431,8 @@
       "ReasonCreateRequest": {
         "properties": {
           "machine_id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Machine Id"
           },
           "reason": {
@@ -1128,7 +1449,8 @@
       "ReasonResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id"
           },
           "key": {
@@ -1144,7 +1466,8 @@
             "title": "Is Active"
           },
           "machine_id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Machine Id"
           },
           "machine_name": {
@@ -1186,6 +1509,110 @@
         "type": "object",
         "title": "ReasonUpdateRequest"
       },
+      "SensorCreateRequest": {
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Machine Id"
+          },
+          "serial": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Serial"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": ["machine_id", "serial", "name"],
+        "title": "SensorCreateRequest"
+      },
+      "SensorResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "serial": {
+            "type": "string",
+            "title": "Serial"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "machine_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Machine Id"
+          },
+          "machine_name": {
+            "type": "string",
+            "title": "Machine Name"
+          }
+        },
+        "type": "object",
+        "required": ["id", "key", "serial", "name", "is_active", "machine_id", "machine_name"],
+        "title": "SensorResponse"
+      },
+      "SensorUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "SensorUpdateRequest"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -1225,7 +1652,8 @@
       "WaveformResponse": {
         "properties": {
           "alert_id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Alert Id"
           },
           "sample_rate": {

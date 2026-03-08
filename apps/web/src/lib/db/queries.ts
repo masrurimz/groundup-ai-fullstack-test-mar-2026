@@ -11,6 +11,7 @@ import { alertsCollection } from "./collections";
 
 export type AlertView = {
   id: string;
+  serial_number: number;
   title: string;
   description: string;
   severity: string;
@@ -42,7 +43,8 @@ const mapSeverity = (anomalyType: string): string => {
 };
 
 const toAlertView = ({ alert }: AlertRow): AlertView => ({
-  id: `${alert.id}`,
+  id: alert.id,
+  serial_number: alert.serial_number,
   title: `${alert.machine} ${alert.anomaly_type}`,
   description: `${alert.machine} sensor ${alert.sensor}`,
   severity: mapSeverity(alert.anomaly_type),
@@ -76,7 +78,7 @@ export function useAlert(id?: string) {
 
       return q
         .from({ alert: alertsCollection })
-        .where(({ alert }) => eq(alert.id, Number(id)))
+        .where(({ alert }) => eq(alert.id, id))
         .fn.select(toAlertView);
     },
     [id],

@@ -1,20 +1,23 @@
+import uuid
 from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class AlertResponse(BaseModel):
-    id: int
+    id: uuid.UUID
+    serial_number: int
     timestamp: datetime
     machine: str
-    machine_id: int | None
+    machine_id: uuid.UUID | None
     anomaly_type: str
     sensor: str
+    sensor_id: uuid.UUID | None
     sound_clip: str
     suspected_reason: str | None
-    suspected_reason_id: int | None
+    suspected_reason_id: uuid.UUID | None
     action: str | None
-    action_id: int | None
+    action_id: uuid.UUID | None
     comment: str | None
     updated_at: datetime | None
     updated_by: str | None
@@ -23,8 +26,8 @@ class AlertResponse(BaseModel):
 
 
 class AlertUpdateRequest(BaseModel):
-    suspected_reason_id: int | None = None
-    action_id: int | None = None
+    suspected_reason_id: uuid.UUID | None = None
+    action_id: uuid.UUID | None = None
     comment: str | None = Field(default=None, max_length=2000)
 
     @field_validator("comment")
@@ -50,7 +53,7 @@ class AlertListQuery(BaseModel):
 
 
 class WaveformResponse(BaseModel):
-    alert_id: int
+    alert_id: uuid.UUID
     sample_rate: int
     duration_seconds: float
     times: list[float]

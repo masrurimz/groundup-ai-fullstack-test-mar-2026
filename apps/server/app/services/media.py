@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 from threading import Lock
 from typing import TypedDict
@@ -24,15 +25,10 @@ class WaveformData(TypedDict):
 
 
 _waveform_cache_lock = Lock()
-_waveform_cache: dict[tuple[str, int, int], WaveformData] = {}
+_waveform_cache: dict[str, WaveformData] = {}
 
 
-def _cache_key(path: Path) -> tuple[str, int, int]:
-    stat = path.stat()
-    return (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
-
-
-def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
+def generate_spectrogram(wav_path: Path) -> bytes:
     y, sr = librosa.load(str(wav_path), sr=None)
 
     mel_spec = librosa.feature.melspectrogram(
@@ -60,11 +56,11 @@ def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Frequency (Hz)")
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
-    plt.savefig(str(output_path), dpi=100, bbox_inches="tight", format="png")
+    buf = io.BytesIO()
+    plt.savefig(buf, dpi=100, bbox_inches="tight", format="png")
     plt.close(fig)
-    return output_path
+    return buf.getvalue()
 
 
 def generate_waveform(wav_path: Path, max_points: int = 2048) -> WaveformData:
@@ -82,23 +78,12 @@ def generate_waveform(wav_path: Path, max_points: int = 2048) -> WaveformData:
     }
 
 
-def generate_waveform_cached(wav_path: Path, max_points: int = 2048) -> WaveformData:
-    key = _cache_key(wav_path)
+def get_waveform_from_cache(cache_key: str) -> WaveformData | None:
+    """Check in-memory cache only. No I/O."""
     with _waveform_cache_lock:
-        cached = _waveform_cache.get(key)
+        return _waveform_cache.get(cache_key)
 
-    if cached is not None:
-        return cached
 
-    waveform = generate_waveform(wav_path=wav_path, max_points=max_points)
+def put_waveform_in_cache(cache_key: str, data: WaveformData) -> None:
     with _waveform_cache_lock:
-        _waveform_cache[key] = waveform
-
-    return waveform
-
-
-def ensure_spectrogram(wav_path: Path, output_path: Path) -> Path:
-    if output_path.exists():
-        return output_path
-
-    return generate_spectrogram(wav_path=wav_path, output_path=output_path)
+        _waveform_cache[cache_key] = data

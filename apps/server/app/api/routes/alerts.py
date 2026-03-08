@@ -1,67 +1,57 @@
+import asyncio
+import json
+import uuid
 from datetime import UTC, date, datetime, time
 from pathlib import Path
 
-import aiofiles
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.db import get_session
-from app.models import Action, Alert, AuditLog, Reason
+from app.models import Action, Alert, AuditLog, Machine, Reason
 from app.schemas import AlertResponse, AlertUpdateRequest, WaveformResponse
-from app.services.media import ensure_spectrogram, generate_waveform_cached
+from app.services.media import (
+    generate_spectrogram,
+    generate_waveform,
+    get_waveform_from_cache,
+    put_waveform_in_cache,
+)
+from app.services.storage import storage
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
-AUDIO_CHUNK_SIZE = 1024 * 512
 
-
-def _parse_range_header(range_header: str, file_size: int) -> tuple[int, int]:
-    if not range_header.startswith("bytes="):
-        raise HTTPException(status_code=416, detail="Invalid Range header")
-
-    start_text, _, end_text = range_header.removeprefix("bytes=").partition("-")
-    if not start_text:
-        raise HTTPException(status_code=416, detail="Invalid Range header")
-
-    try:
-        start = int(start_text)
-        end = int(end_text) if end_text else file_size - 1
-    except ValueError as error:
-        raise HTTPException(status_code=416, detail="Invalid Range header") from error
-
-    end = min(end, file_size - 1)
-    if start < 0 or start > end:
-        raise HTTPException(
-            status_code=416,
-            detail="Range Not Satisfiable",
-            headers={"Content-Range": f"bytes */{file_size}"},
-        )
-
-    return start, end
-
-
-async def _iter_audio_bytes(path: Path, start: int, end: int):
-    remaining = end - start + 1
-    async with aiofiles.open(path, "rb") as audio_file:
-        await audio_file.seek(start)
-        while remaining > 0:
-            read_size = min(AUDIO_CHUNK_SIZE, remaining)
-            chunk = await audio_file.read(read_size)
-            if not chunk:
-                break
-            remaining -= len(chunk)
-            yield chunk
-
-
-async def _get_alert_or_404(session: AsyncSession, alert_id: int) -> Alert:
+async def _get_alert_or_404(session: AsyncSession, alert_id: uuid.UUID) -> Alert:
     result = await session.execute(select(Alert).where(Alert.id == alert_id))
     alert = result.scalar_one_or_none()
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return alert
+
+
+async def _get_baseline_audio_key_or_404(
+    session: AsyncSession, alert_id: uuid.UUID
+) -> tuple[str, str]:
+    """Resolve alert -> machine -> baseline S3 key, raising 404 at each step.
+
+    Returns (audio_key, sound_clip) where sound_clip is the non-None baseline filename.
+    """
+    alert = await _get_alert_or_404(session, alert_id)
+    if alert.machine_id is None:
+        raise HTTPException(status_code=404, detail="Alert has no associated machine")
+    result = await session.execute(select(Machine).where(Machine.id == alert.machine_id))
+    machine = result.scalar_one_or_none()
+    if machine is None:
+        raise HTTPException(status_code=404, detail="Machine not found")
+    if not machine.baseline_sound_clip:
+        raise HTTPException(status_code=404, detail="No baseline audio available for this machine")
+    sound_clip: str = machine.baseline_sound_clip
+    s3_key = f"audio/{sound_clip}"
+    if not await storage.async_file_exists(s3_key):
+        raise HTTPException(status_code=404, detail="Baseline audio file not found")
+    return s3_key, sound_clip
 
 
 @router.get("", response_model=list[AlertResponse])
@@ -91,7 +81,7 @@ async def list_alerts(
 
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(
-    alert_id: int,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> Alert:
     return await _get_alert_or_404(session, alert_id)
@@ -99,16 +89,18 @@ async def get_alert(
 
 @router.patch("/{alert_id}", response_model=AlertResponse)
 async def update_alert(
-    alert_id: int,
+    alert_id: uuid.UUID,
     body: AlertUpdateRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Alert:
     alert = await _get_alert_or_404(session, alert_id)
 
     before = {
-        "suspected_reason_id": alert.suspected_reason_id,
+        "suspected_reason_id": str(alert.suspected_reason_id)
+        if alert.suspected_reason_id
+        else None,
         "suspected_reason": alert.suspected_reason,
-        "action_id": alert.action_id,
+        "action_id": str(alert.action_id) if alert.action_id else None,
         "action": alert.action,
         "comment": alert.comment,
     }
@@ -162,9 +154,11 @@ async def update_alert(
             actor="admin-ui",
             before_json=before,
             after_json={
-                "suspected_reason_id": alert.suspected_reason_id,
+                "suspected_reason_id": str(alert.suspected_reason_id)
+                if alert.suspected_reason_id
+                else None,
                 "suspected_reason": alert.suspected_reason,
-                "action_id": alert.action_id,
+                "action_id": str(alert.action_id) if alert.action_id else None,
                 "action": alert.action,
                 "comment": alert.comment,
             },
@@ -179,75 +173,154 @@ async def update_alert(
 
 @router.get("/{alert_id}/audio")
 async def get_audio(
-    alert_id: int,
-    request: Request,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-) -> StreamingResponse:
+) -> RedirectResponse:
     alert = await _get_alert_or_404(session, alert_id)
-    audio_path = settings.AUDIO_DIR / alert.sound_clip
-
-    if not audio_path.exists():
+    s3_key = f"audio/{alert.sound_clip}"
+    if not await storage.async_file_exists(s3_key):
         raise HTTPException(status_code=404, detail="Audio file not found")
+    url = await storage.async_generate_presigned_url(s3_key)
+    return RedirectResponse(url=url, status_code=302)
 
-    file_size = audio_path.stat().st_size
-    range_header = request.headers.get("range")
 
-    if range_header:
-        start, end = _parse_range_header(range_header, file_size)
-        content_length = end - start + 1
-        return StreamingResponse(
-            _iter_audio_bytes(audio_path, start, end),
-            status_code=206,
-            media_type="audio/wav",
-            headers={
-                "Accept-Ranges": "bytes",
-                "Content-Range": f"bytes {start}-{end}/{file_size}",
-                "Content-Length": str(content_length),
-            },
+@router.get("/{alert_id}/waveform")
+async def get_waveform(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    alert = await _get_alert_or_404(session, alert_id)
+    audio_key = f"audio/{alert.sound_clip}"
+    json_key = f"waveforms/{alert.sound_clip}.json"
+
+    # Tier 1: in-memory cache (no I/O)
+    cached = get_waveform_from_cache(audio_key)
+    if cached is not None:
+        return JSONResponse(
+            content=WaveformResponse(alert_id=alert_id, **cached).model_dump(mode="json"),
+            headers={"Cache-Control": "public, max-age=86400"},
         )
 
-    return StreamingResponse(
-        _iter_audio_bytes(audio_path, 0, file_size - 1),
-        status_code=200,
-        media_type="audio/wav",
-        headers={
-            "Accept-Ranges": "bytes",
-            "Content-Length": str(file_size),
-        },
-    )
+    # Tier 2: pre-computed JSON persisted in S3
+    if await storage.async_file_exists(json_key):
+        tmp = await storage.async_download_to_tempfile(json_key)
+        try:
+            waveform = json.loads(tmp.read_text())
+        finally:
+            tmp.unlink(missing_ok=True)
+        put_waveform_in_cache(audio_key, waveform)
+        return JSONResponse(
+            content=WaveformResponse(alert_id=alert_id, **waveform).model_dump(mode="json"),
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
-
-@router.get("/{alert_id}/waveform", response_model=WaveformResponse)
-async def get_waveform(
-    alert_id: int,
-    session: AsyncSession = Depends(get_session),
-) -> WaveformResponse:
-    alert = await _get_alert_or_404(session, alert_id)
-    audio_path = settings.AUDIO_DIR / alert.sound_clip
-
-    if not audio_path.exists():
+    # Tier 3: compute from WAV (cold path)
+    if not await storage.async_file_exists(audio_key):
         raise HTTPException(status_code=404, detail="Audio file not found")
+    tmp_path = await storage.async_download_to_tempfile(audio_key)
+    try:
+        waveform = await asyncio.to_thread(generate_waveform, tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
-    waveform = generate_waveform_cached(audio_path)
-    return WaveformResponse(alert_id=alert_id, **waveform)
+    await storage.async_upload_bytes(json_key, json.dumps(waveform).encode(), "application/json")
+    put_waveform_in_cache(audio_key, waveform)
+    return JSONResponse(
+        content=WaveformResponse(alert_id=alert_id, **waveform).model_dump(mode="json"),
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/{alert_id}/spectrogram")
 async def get_spectrogram(
-    alert_id: int,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
-) -> FileResponse:
+) -> RedirectResponse:
     alert = await _get_alert_or_404(session, alert_id)
-    spectrogram_path = settings.SPECTROGRAM_DIR / f"{alert_id}.png"
-
-    if not spectrogram_path.exists():
-        audio_path = settings.AUDIO_DIR / alert.sound_clip
-        if not audio_path.exists():
+    spec_key = f"spectrograms/{alert_id}.png"
+    if not await storage.async_file_exists(spec_key):
+        audio_key = f"audio/{alert.sound_clip}"
+        if not await storage.async_file_exists(audio_key):
             raise HTTPException(status_code=404, detail="Audio file not found")
-        ensure_spectrogram(audio_path, spectrogram_path)
+        tmp_wav = await storage.async_download_to_tempfile(audio_key)
+        try:
+            png_bytes = generate_spectrogram(tmp_wav)
+        finally:
+            tmp_wav.unlink(missing_ok=True)
+        await storage.async_upload_bytes(spec_key, png_bytes, "image/png")
+    url = await storage.async_generate_presigned_url(spec_key)
+    return RedirectResponse(url=url, status_code=302)
 
-    return FileResponse(
-        path=str(spectrogram_path),
-        media_type="image/png",
-        filename=f"spectrogram_{alert_id}.png",
+
+@router.get("/{alert_id}/baseline/audio")
+async def get_baseline_audio(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> RedirectResponse:
+    s3_key, _ = await _get_baseline_audio_key_or_404(session, alert_id)
+    url = await storage.async_generate_presigned_url(s3_key)
+    return RedirectResponse(url=url, status_code=302)
+
+
+@router.get("/{alert_id}/baseline/waveform")
+async def get_baseline_waveform(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    audio_key, sound_clip = await _get_baseline_audio_key_or_404(session, alert_id)
+    json_key = f"waveforms/baseline_{sound_clip}.json"
+
+    # Tier 1: in-memory cache (no I/O)
+    cached = get_waveform_from_cache(audio_key)
+    if cached is not None:
+        return JSONResponse(
+            content=WaveformResponse(alert_id=alert_id, **cached).model_dump(mode="json"),
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    # Tier 2: pre-computed JSON persisted in S3
+    if await storage.async_file_exists(json_key):
+        tmp = await storage.async_download_to_tempfile(json_key)
+        try:
+            waveform = json.loads(tmp.read_text())
+        finally:
+            tmp.unlink(missing_ok=True)
+        put_waveform_in_cache(audio_key, waveform)
+        return JSONResponse(
+            content=WaveformResponse(alert_id=alert_id, **waveform).model_dump(mode="json"),
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    # Tier 3: compute from WAV (cold path)
+    # _get_baseline_audio_key_or_404 already verified the WAV exists
+    tmp_path = await storage.async_download_to_tempfile(audio_key)
+    try:
+        waveform = await asyncio.to_thread(generate_waveform, tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    await storage.async_upload_bytes(json_key, json.dumps(waveform).encode(), "application/json")
+    put_waveform_in_cache(audio_key, waveform)
+    return JSONResponse(
+        content=WaveformResponse(alert_id=alert_id, **waveform).model_dump(mode="json"),
+        headers={"Cache-Control": "public, max-age=86400"},
     )
+
+
+@router.get("/{alert_id}/baseline/spectrogram")
+async def get_baseline_spectrogram(
+    alert_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> RedirectResponse:
+    s3_key, sound_clip = await _get_baseline_audio_key_or_404(session, alert_id)
+    clip_name = Path(sound_clip).stem
+    spec_key = f"spectrograms/baseline_{clip_name}.png"
+    if not await storage.async_file_exists(spec_key):
+        tmp_wav = await storage.async_download_to_tempfile(s3_key)
+        try:
+            png_bytes = generate_spectrogram(tmp_wav)
+        finally:
+            tmp_wav.unlink(missing_ok=True)
+        await storage.async_upload_bytes(spec_key, png_bytes, "image/png")
+    url = await storage.async_generate_presigned_url(spec_key)
+    return RedirectResponse(url=url, status_code=302)

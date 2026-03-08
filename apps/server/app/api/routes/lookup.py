@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -5,7 +6,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
-from app.models import Action, AuditLog, Machine, Reason
+from app.models import Action, AuditLog, Machine, Reason, Sensor
 from app.schemas import (
     ActionCreateRequest,
     ActionResponse,
@@ -16,6 +17,9 @@ from app.schemas import (
     ReasonCreateRequest,
     ReasonResponse,
     ReasonUpdateRequest,
+    SensorCreateRequest,
+    SensorResponse,
+    SensorUpdateRequest,
 )
 
 router = APIRouter(prefix="/lookup", tags=["lookup"])
@@ -54,11 +58,23 @@ def _to_action_response(action: Action) -> ActionResponse:
     )
 
 
+def _to_sensor_response(sensor: Sensor, machine_name: str) -> SensorResponse:
+    return SensorResponse(
+        id=sensor.id,
+        key=sensor.key,
+        serial=sensor.serial,
+        name=sensor.name,
+        is_active=sensor.is_active,
+        machine_id=sensor.machine_id,
+        machine_name=machine_name,
+    )
+
+
 async def _record_audit(
     session: AsyncSession,
     *,
     entity_type: str,
-    entity_id: int,
+    entity_id: uuid.UUID,
     operation: str,
     before_json: dict | None,
     after_json: dict | None,
@@ -119,7 +135,7 @@ async def create_machine(
 
 @router.patch("/machines/{machine_id}", response_model=MachineResponse)
 async def update_machine(
-    machine_id: int,
+    machine_id: uuid.UUID,
     body: MachineUpdateRequest,
     session: AsyncSession = Depends(get_session),
 ) -> MachineResponse:
@@ -162,7 +178,7 @@ async def update_machine(
 
 @router.get("/reasons", response_model=list[ReasonResponse])
 async def get_reasons(
-    machine_id: int | None = None,
+    machine_id: uuid.UUID | None = None,
     machine: str | None = None,
     include_inactive: bool = False,
     session: AsyncSession = Depends(get_session),
@@ -228,7 +244,7 @@ async def create_reason(
         operation="create",
         before_json=None,
         after_json={
-            "machine_id": reason.machine_id,
+            "machine_id": str(reason.machine_id),
             "reason": reason.reason,
             "is_active": reason.is_active,
         },
@@ -240,7 +256,7 @@ async def create_reason(
 
 @router.patch("/reasons/{reason_id}", response_model=ReasonResponse)
 async def update_reason(
-    reason_id: int,
+    reason_id: uuid.UUID,
     body: ReasonUpdateRequest,
     session: AsyncSession = Depends(get_session),
 ) -> ReasonResponse:
@@ -334,7 +350,7 @@ async def create_action(
 
 @router.patch("/actions/{action_id}", response_model=ActionResponse)
 async def update_action(
-    action_id: int,
+    action_id: uuid.UUID,
     body: ActionUpdateRequest,
     session: AsyncSession = Depends(get_session),
 ) -> ActionResponse:
@@ -372,3 +388,139 @@ async def update_action(
     await session.commit()
     await session.refresh(action)
     return _to_action_response(action)
+
+
+@router.get("/sensors", response_model=list[SensorResponse])
+async def get_sensors(
+    machine_id: uuid.UUID | None = None,
+    machine: str | None = None,
+    include_inactive: bool = False,
+    session: AsyncSession = Depends(get_session),
+) -> list[SensorResponse]:
+    query = (
+        select(Sensor, Machine.name)
+        .join(Machine, Sensor.machine_id == Machine.id)
+        .order_by(Machine.name, Sensor.name)
+    )
+
+    conditions = []
+    if machine_id is not None:
+        conditions.append(Sensor.machine_id == machine_id)
+    elif machine is not None:
+        normalized_machine = _normalize_key(machine)
+        conditions.append(func.lower(Machine.key) == normalized_machine)
+
+    if not include_inactive:
+        conditions.append(and_(Sensor.is_active, Machine.is_active))
+
+    if conditions:
+        query = query.where(and_(*conditions))
+
+    rows = (await session.execute(query)).all()
+    return [_to_sensor_response(sensor, machine_name) for sensor, machine_name in rows]
+
+
+@router.post("/sensors", response_model=SensorResponse, status_code=status.HTTP_201_CREATED)
+async def create_sensor(
+    body: SensorCreateRequest,
+    session: AsyncSession = Depends(get_session),
+) -> SensorResponse:
+    machine = (
+        await session.execute(select(Machine).where(Machine.id == body.machine_id))
+    ).scalar_one_or_none()
+    if machine is None:
+        raise HTTPException(status_code=404, detail="machine not found")
+
+    serial = body.serial
+    key = _normalize_key(serial)
+
+    exists = await session.execute(
+        select(Sensor).where(and_(Sensor.machine_id == body.machine_id, Sensor.key == key))
+    )
+    if exists.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="sensor already exists for machine")
+
+    now = datetime.now(tz=UTC)
+    sensor = Sensor(
+        machine_id=body.machine_id,
+        serial=serial,
+        key=key,
+        name=body.name,
+        is_active=True,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(sensor)
+    await session.flush()
+    await _record_audit(
+        session,
+        entity_type="sensor",
+        entity_id=sensor.id,
+        operation="create",
+        before_json=None,
+        after_json={
+            "machine_id": str(sensor.machine_id),
+            "serial": sensor.serial,
+            "name": sensor.name,
+            "is_active": sensor.is_active,
+        },
+    )
+    await session.commit()
+    await session.refresh(sensor)
+    return _to_sensor_response(sensor, machine.name)
+
+
+@router.patch("/sensors/{sensor_id}", response_model=SensorResponse)
+async def update_sensor(
+    sensor_id: uuid.UUID,
+    body: SensorUpdateRequest,
+    session: AsyncSession = Depends(get_session),
+) -> SensorResponse:
+    row = (
+        await session.execute(
+            select(Sensor, Machine.name)
+            .join(Machine, Sensor.machine_id == Machine.id)
+            .where(Sensor.id == sensor_id)
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="sensor not found")
+
+    sensor, machine_name = row
+    before = {"serial": sensor.serial, "name": sensor.name, "is_active": sensor.is_active}
+
+    if body.serial is not None:
+        serial = body.serial
+        key = _normalize_key(serial)
+        dupe = await session.execute(
+            select(Sensor).where(
+                and_(
+                    Sensor.machine_id == sensor.machine_id,
+                    Sensor.key == key,
+                    Sensor.id != sensor.id,
+                )
+            )
+        )
+        if dupe.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail="sensor already exists for machine")
+        sensor.serial = serial
+        sensor.key = key
+
+    if body.name is not None:
+        sensor.name = body.name
+
+    if body.is_active is not None:
+        sensor.is_active = body.is_active
+
+    sensor.updated_at = datetime.now(tz=UTC)
+    await _record_audit(
+        session,
+        entity_type="sensor",
+        entity_id=sensor.id,
+        operation="update",
+        before_json=before,
+        after_json={"serial": sensor.serial, "name": sensor.name, "is_active": sensor.is_active},
+    )
+    await session.commit()
+    await session.refresh(sensor)
+    return _to_sensor_response(sensor, machine_name)

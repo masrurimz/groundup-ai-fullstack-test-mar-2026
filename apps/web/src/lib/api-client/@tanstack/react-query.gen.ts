@@ -7,11 +7,16 @@ import {
   createActionApiV1LookupActionsPost,
   createMachineApiV1LookupMachinesPost,
   createReasonApiV1LookupReasonsPost,
+  createSensorApiV1LookupSensorsPost,
   getActionsApiV1LookupActionsGet,
   getAlertApiV1AlertsAlertIdGet,
   getAudioApiV1AlertsAlertIdAudioGet,
+  getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet,
+  getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet,
+  getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet,
   getMachinesApiV1LookupMachinesGet,
   getReasonsApiV1LookupReasonsGet,
+  getSensorsApiV1LookupSensorsGet,
   getSpectrogramApiV1AlertsAlertIdSpectrogramGet,
   getWaveformApiV1AlertsAlertIdWaveformGet,
   healthApiV1HealthGet,
@@ -22,6 +27,7 @@ import {
   updateAlertApiV1AlertsAlertIdPatch,
   updateMachineApiV1LookupMachinesMachineIdPatch,
   updateReasonApiV1LookupReasonsReasonIdPatch,
+  updateSensorApiV1LookupSensorsSensorIdPatch,
 } from "../sdk.gen";
 import type {
   CreateActionApiV1LookupActionsPostData,
@@ -33,6 +39,9 @@ import type {
   CreateReasonApiV1LookupReasonsPostData,
   CreateReasonApiV1LookupReasonsPostError,
   CreateReasonApiV1LookupReasonsPostResponse,
+  CreateSensorApiV1LookupSensorsPostData,
+  CreateSensorApiV1LookupSensorsPostError,
+  CreateSensorApiV1LookupSensorsPostResponse,
   GetActionsApiV1LookupActionsGetData,
   GetActionsApiV1LookupActionsGetError,
   GetActionsApiV1LookupActionsGetResponse,
@@ -41,12 +50,22 @@ import type {
   GetAlertApiV1AlertsAlertIdGetResponse,
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetError,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData,
+  GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData,
+  GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
+  GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetError,
   GetMachinesApiV1LookupMachinesGetResponse,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetError,
   GetReasonsApiV1LookupReasonsGetResponse,
+  GetSensorsApiV1LookupSensorsGetData,
+  GetSensorsApiV1LookupSensorsGetError,
+  GetSensorsApiV1LookupSensorsGetResponse,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetData,
   GetSpectrogramApiV1AlertsAlertIdSpectrogramGetError,
   GetWaveformApiV1AlertsAlertIdWaveformGetData,
@@ -71,6 +90,9 @@ import type {
   UpdateReasonApiV1LookupReasonsReasonIdPatchData,
   UpdateReasonApiV1LookupReasonsReasonIdPatchError,
   UpdateReasonApiV1LookupReasonsReasonIdPatchResponse,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchData,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -274,6 +296,90 @@ export const getSpectrogramApiV1AlertsAlertIdSpectrogramGetOptions = (
       return data;
     },
     queryKey: getSpectrogramApiV1AlertsAlertIdSpectrogramGetQueryKey(options),
+  });
+
+export const getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey = (
+  options: Options<GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData>,
+) => createQueryKey("getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet", options);
+
+/**
+ * Get Baseline Audio
+ */
+export const getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetOptions = (
+  options: Options<GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetData>,
+) =>
+  queryOptions<
+    unknown,
+    GetBaselineAudioApiV1AlertsAlertIdBaselineAudioGetError,
+    unknown,
+    ReturnType<typeof getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineAudioApiV1AlertsAlertIdBaselineAudioGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineAudioApiV1AlertsAlertIdBaselineAudioGetQueryKey(options),
+  });
+
+export const getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey = (
+  options: Options<GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData>,
+) => createQueryKey("getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet", options);
+
+/**
+ * Get Baseline Waveform
+ */
+export const getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetOptions = (
+  options: Options<GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetData>,
+) =>
+  queryOptions<
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetError,
+    GetBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetResponse,
+    ReturnType<typeof getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetQueryKey(options),
+  });
+
+export const getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey = (
+  options: Options<GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData>,
+) => createQueryKey("getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet", options);
+
+/**
+ * Get Baseline Spectrogram
+ */
+export const getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetOptions = (
+  options: Options<GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetData>,
+) =>
+  queryOptions<
+    unknown,
+    GetBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetError,
+    unknown,
+    ReturnType<typeof getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getBaselineSpectrogramApiV1AlertsAlertIdBaselineSpectrogramGetQueryKey(options),
   });
 
 export const getMachinesApiV1LookupMachinesGetQueryKey = (
@@ -512,6 +618,88 @@ export const updateActionApiV1LookupActionsActionIdPatchMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await updateActionApiV1LookupActionsActionIdPatch({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getSensorsApiV1LookupSensorsGetQueryKey = (
+  options?: Options<GetSensorsApiV1LookupSensorsGetData>,
+) => createQueryKey("getSensorsApiV1LookupSensorsGet", options);
+
+/**
+ * Get Sensors
+ */
+export const getSensorsApiV1LookupSensorsGetOptions = (
+  options?: Options<GetSensorsApiV1LookupSensorsGetData>,
+) =>
+  queryOptions<
+    GetSensorsApiV1LookupSensorsGetResponse,
+    GetSensorsApiV1LookupSensorsGetError,
+    GetSensorsApiV1LookupSensorsGetResponse,
+    ReturnType<typeof getSensorsApiV1LookupSensorsGetQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getSensorsApiV1LookupSensorsGet({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getSensorsApiV1LookupSensorsGetQueryKey(options),
+  });
+
+/**
+ * Create Sensor
+ */
+export const createSensorApiV1LookupSensorsPostMutation = (
+  options?: Partial<Options<CreateSensorApiV1LookupSensorsPostData>>,
+): UseMutationOptions<
+  CreateSensorApiV1LookupSensorsPostResponse,
+  CreateSensorApiV1LookupSensorsPostError,
+  Options<CreateSensorApiV1LookupSensorsPostData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateSensorApiV1LookupSensorsPostResponse,
+    CreateSensorApiV1LookupSensorsPostError,
+    Options<CreateSensorApiV1LookupSensorsPostData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createSensorApiV1LookupSensorsPost({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update Sensor
+ */
+export const updateSensorApiV1LookupSensorsSensorIdPatchMutation = (
+  options?: Partial<Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>>,
+): UseMutationOptions<
+  UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
+  UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+  Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateSensorApiV1LookupSensorsSensorIdPatchResponse,
+    UpdateSensorApiV1LookupSensorsSensorIdPatchError,
+    Options<UpdateSensorApiV1LookupSensorsSensorIdPatchData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateSensorApiV1LookupSensorsSensorIdPatch({
         ...options,
         ...fnOptions,
         throwOnError: true,

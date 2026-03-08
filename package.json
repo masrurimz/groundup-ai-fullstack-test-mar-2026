@@ -16,6 +16,9 @@
   },
   "type": "module",
   "scripts": {
+    "test": "turbo test",
+    "test:web": "turbo test --filter=web",
+    "test:server": "turbo test --filter=server",
     "env:run": "infisical run --domain https://infisical.zahid.es/api --env dev --",
     "env:use": "bun scripts/env-switch.ts",
     "dev": "bun run env:run turbo dev",
@@ -31,6 +34,12 @@
     "seed:dev": "bun run env:run bun run -F server seed:dev",
     "deploy": "bun run env:run turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
     "destroy": "bun run env:run turbo -F @groundup-ai-fullstack-test-mar-2026/infra destroy",
+    "deploy:local": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build",
+    "deploy:local:web": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build web",
+    "deploy:local:server": "docker compose -f deploy/local-cloudflare/docker-compose.yml up -d --build server",
+    "deploy:local:logs": "docker compose -f deploy/local-cloudflare/docker-compose.yml logs -f",
+    "deploy:local:seed": "docker compose -f deploy/local-cloudflare/docker-compose.yml exec server python -m app.scripts.seed",
+    "deploy:local:down": "docker compose -f deploy/local-cloudflare/docker-compose.yml down",
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {

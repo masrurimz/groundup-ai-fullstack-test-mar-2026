@@ -1,5 +1,5 @@
+import io
 import math
-import shutil
 import wave
 from datetime import UTC, datetime
 from pathlib import Path
@@ -9,10 +9,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models import Action, Alert, Machine, Reason
+from app.models import Action, Alert, Machine, Reason, Sensor
 from app.services.media import generate_spectrogram
+from app.services.storage import storage
 
 DEV_SEED_SOUND_CLIP = "dev-seed.wav"
+
+# Per-machine baseline WAV configs: machine_key -> (filename, frequency_hz, duration_seconds)
+_BASELINE_CONFIGS: dict[str, tuple[str, float, float]] = {
+    "cnc machine": ("baseline-cnc-machine.wav", 440.0, 4.0),
+    "milling machine": ("baseline-milling-machine.wav", 330.0, 5.0),
+}
 
 
 def _dataset_file() -> Path:
@@ -20,11 +27,7 @@ def _dataset_file() -> Path:
 
 
 def _normalize_sensor(value: object) -> str:
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, float):
-        return str(int(value))
-    return str(value)
+    return str(value).strip()
 
 
 def _normalize_key(value: str) -> str:
@@ -52,26 +55,63 @@ async def _ensure_machine(session: AsyncSession, machine_name: str) -> Machine:
     return machine
 
 
-def copy_wav_files() -> None:
-    settings.AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+async def _ensure_sensor(session: AsyncSession, machine: Machine, serial: str) -> Sensor:
+    key = _normalize_key(serial)
+    existing = (
+        await session.execute(
+            select(Sensor).where(Sensor.machine_id == machine.id, Sensor.key == key)
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    now = datetime.now(tz=UTC)
+    sensor = Sensor(
+        machine_id=machine.id,
+        serial=serial,
+        name=f"Sensor {serial}",
+        key=key,
+        is_active=True,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(sensor)
+    await session.flush()
+    return sensor
+
+
+def upload_wav_files() -> None:
     for wav_file in settings.DATASET_DIR.glob("*.wav"):
-        destination = settings.AUDIO_DIR / wav_file.name
-        if not destination.exists():
-            shutil.copy2(wav_file, destination)
+        key = f"audio/{wav_file.name}"
+        if not storage.file_exists(key):
+            storage.upload_file(key, wav_file, "audio/wav")
+    _upload_baseline_wavs()
 
 
-def _create_dev_seed_wav(
-    path: Path, duration_seconds: float = 0.35, sample_rate: int = 16000
-) -> None:
+def _upload_baseline_wavs() -> None:
+    for filename, freq, dur in _BASELINE_CONFIGS.values():
+        key = f"audio/{filename}"
+        if not storage.file_exists(key):
+            wav_bytes = _create_baseline_wav_bytes(frequency_hz=freq, duration_seconds=dur)
+            storage.upload_bytes(key, wav_bytes, "audio/wav")
+
+
+def _create_baseline_wav_bytes(
+    frequency_hz: float = 440.0,
+    duration_seconds: float = 4.0,
+    sample_rate: int = 16000,
+    amplitude: float = 0.35,
+) -> bytes:
+    """Generate a clean sine-wave WAV representing normal machine operation."""
     n_samples = int(duration_seconds * sample_rate)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(path), "w") as wav_file:
+    buf = io.BytesIO()
+    with wave.open(buf, "w") as wav_file:
         wav_file.setnchannels(1)
         wav_file.setsampwidth(2)
         wav_file.setframerate(sample_rate)
         for i in range(n_samples):
-            sample = int(32767 * 0.35 * math.sin(2 * math.pi * 440 * i / sample_rate))
+            sample = int(32767 * amplitude * math.sin(2 * math.pi * frequency_hz * i / sample_rate))
             wav_file.writeframesraw(sample.to_bytes(2, byteorder="little", signed=True))
+    return buf.getvalue()
 
 
 async def seed_lookup_data(session: AsyncSession) -> None:
@@ -85,6 +125,14 @@ async def seed_lookup_data(session: AsyncSession) -> None:
     machine_by_name: dict[str, Machine] = {}
     for machine_name in machine_rows:
         machine_by_name[machine_name] = await _ensure_machine(session, machine_name)
+
+    # Set baseline sound clip for each machine if not already set
+    for machine_name, machine in machine_by_name.items():
+        key = _normalize_key(machine_name)
+        config = _BASELINE_CONFIGS.get(key)
+        if config is not None and machine.baseline_sound_clip is None:
+            machine.baseline_sound_clip = config[0]
+            session.add(machine)
 
     if reasons_existing is None:
         reasons_data = [
@@ -135,7 +183,7 @@ async def seed_alerts(session: AsyncSession) -> None:
     if not dataset.exists():
         return
 
-    df = pd.read_excel(dataset)
+    df = pd.read_excel(dataset, dtype={"Sensor": str})
     machine_rows = sorted({str(row["Machine"]) for _, row in df.iterrows()})
     machine_by_name: dict[str, Machine] = {}
     for machine_name in machine_rows:
@@ -144,13 +192,16 @@ async def seed_alerts(session: AsyncSession) -> None:
     for _, row in df.iterrows():
         timestamp = datetime.fromtimestamp(int(row["Timestamp"]), tz=UTC)
         machine_name = str(row["Machine"])
+        serial = _normalize_sensor(row["Sensor"])
+        sensor = await _ensure_sensor(session, machine_by_name[machine_name], serial)
         session.add(
             Alert(
                 timestamp=timestamp,
                 machine=machine_name,
                 machine_id=machine_by_name[machine_name].id,
                 anomaly_type=str(row["Anomaly"]),
-                sensor=_normalize_sensor(row["Sensor"]),
+                sensor=serial,
+                sensor_id=sensor.id,
                 sound_clip=str(row["soundClip"]),
                 suspected_reason=None,
                 suspected_reason_id=None,
@@ -166,14 +217,20 @@ async def seed_alerts(session: AsyncSession) -> None:
 
 
 async def ensure_spectrograms(session: AsyncSession) -> None:
-    settings.SPECTROGRAM_DIR.mkdir(parents=True, exist_ok=True)
     result = await session.execute(select(Alert.id, Alert.sound_clip))
     for alert_id, sound_clip in result.all():
-        target_png = settings.SPECTROGRAM_DIR / f"{alert_id}.png"
-        source_wav = settings.AUDIO_DIR / sound_clip
-        if target_png.exists() or not source_wav.exists():
+        spec_key = f"spectrograms/{alert_id}.png"
+        if storage.file_exists(spec_key):
             continue
-        generate_spectrogram(source_wav, target_png)
+        audio_key = f"audio/{sound_clip}"
+        if not storage.file_exists(audio_key):
+            continue
+        tmp_wav = storage.download_to_tempfile(audio_key)
+        try:
+            png_bytes = generate_spectrogram(tmp_wav)
+        finally:
+            tmp_wav.unlink(missing_ok=True)
+        storage.upload_bytes(spec_key, png_bytes, "image/png")
 
 
 async def seed_dev_data(session: AsyncSession) -> None:
@@ -184,12 +241,20 @@ async def seed_dev_data(session: AsyncSession) -> None:
     if existing.scalar_one_or_none() is not None:
         return
 
-    dev_wav = settings.AUDIO_DIR / DEV_SEED_SOUND_CLIP
-    if not dev_wav.exists():
-        _create_dev_seed_wav(dev_wav)
+    dev_key = f"audio/{DEV_SEED_SOUND_CLIP}"
+    if not storage.file_exists(dev_key):
+        wav_bytes = _create_baseline_wav_bytes(
+            frequency_hz=440.0, duration_seconds=0.35, sample_rate=16000
+        )
+        storage.upload_bytes(dev_key, wav_bytes, "audio/wav")
 
     machine = await _ensure_machine(session, "CNC Machine")
     now = datetime.now(tz=UTC)
+    dev_sensors = {}
+    for i, _ in enumerate(["Mild", "Moderate", "Severe"], start=1):
+        serial = f"DEV-SENSOR-{i}"
+        dev_sensors[serial] = await _ensure_sensor(session, machine, serial)
+
     for index, anomaly in enumerate(["Mild", "Moderate", "Severe"], start=1):
         session.add(
             Alert(
@@ -198,6 +263,7 @@ async def seed_dev_data(session: AsyncSession) -> None:
                 machine_id=machine.id,
                 anomaly_type=anomaly,
                 sensor=f"DEV-SENSOR-{index}",
+                sensor_id=dev_sensors[f"DEV-SENSOR-{index}"].id,
                 sound_clip=DEV_SEED_SOUND_CLIP,
                 suspected_reason=None,
                 suspected_reason_id=None,
@@ -214,7 +280,7 @@ async def seed_dev_data(session: AsyncSession) -> None:
 
 
 async def bootstrap_data(session: AsyncSession) -> None:
-    copy_wav_files()
+    upload_wav_files()
     await seed_lookup_data(session)
     await seed_alerts(session)
     await ensure_spectrograms(session)

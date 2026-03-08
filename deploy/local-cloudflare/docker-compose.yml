@@ -1,0 +1,51 @@
+services:
+  db:
+    image: timescale/timescaledb:2.19.3-pg17
+    command: ["postgres", "-c", "shared_preload_libraries=timescaledb"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: groundup
+      POSTGRES_USER: groundup
+      POSTGRES_PASSWORD: devpassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U groundup -d groundup"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - groundup_postgres_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://groundup:devpassword@db:5432/groundup
+      CORS_ORIGINS: '["https://groundup.zahid.es"]'
+      DATASET_DIR: /data/source/Fullstack Test
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - /home/zahid/work/groundup-ai/extracted_data:/data/source:ro,z
+    ports:
+      - "127.0.0.1:18000:8000"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_SERVER_URL: https://api-groundup.zahid.es
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "127.0.0.1:18080:3000"
+
+volumes:
+  groundup_postgres_data:

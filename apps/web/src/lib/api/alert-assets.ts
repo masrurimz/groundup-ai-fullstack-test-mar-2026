@@ -19,3 +19,17 @@ export function getAlertAudioUrl(id: string): string {
 export function getAlertSpectrogramUrl(id: string): string {
   return `${getApiV1BaseUrl()}/alerts/${id}/spectrogram`;
 }
+
+/**
+ * Get the direct baseline audio URL for an alert (resolves via alert → machine → baseline clip).
+ */
+export function getAlertBaselineAudioUrl(id: string): string {
+  return `${getApiV1BaseUrl()}/alerts/${id}/baseline/audio`;
+}
+
+/**
+ * Get the direct baseline spectrogram image URL for an alert.
+ */
+export function getAlertBaselineSpectrogramUrl(id: string): string {
+  return `${getApiV1BaseUrl()}/alerts/${id}/baseline/spectrogram`;
+}

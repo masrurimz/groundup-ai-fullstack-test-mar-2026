@@ -2,7 +2,7 @@
   "name": "server",
   "private": true,
   "scripts": {
-    "dev": "uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000",
+    "dev": "infisical run --domain https://infisical.zahid.es/api --env dev -- uv run fastapi dev app/main.py --host 0.0.0.0 --port 8000",
     "db:migrate": "uv run alembic upgrade head",
     "seed": "uv run python -m app.scripts.seed",
     "seed:dev": "uv run python -m app.scripts.seed_dev",

@@ -2,14 +2,24 @@
 
 A fullstack web application for monitoring industrial machine anomaly alerts. Operators review audio recordings of anomalous machine outputs, examine waveforms and spectrograms, and annotate each alert with a suspected reason, remediation action, and comment. Machine, reason, and action catalogs are managed through a dedicated settings interface.
 
-## What It Does
+## Live Demo
 
-| Area         | Description                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| Dashboard    | Live stats (machine count, average uptime, active/critical alerts) + machine health breakdown + recent alerts table |
-| Alerts list  | Filterable sidebar list by machine, anomaly type, and date range                                                    |
-| Alert detail | Side-by-side anomaly panel (audio player, waveform, spectrogram) + editable annotation form                         |
-| Settings     | CRUD management for machines, machine-scoped reasons, and global actions — all with active-state toggling           |
+- Frontend: https://groundup.zahid.es
+- API docs: https://api-groundup.zahid.es/docs
+- Deployed on a local server via Cloudflare Tunnel (GCP trial expired)
+
+## Features
+
+- [x] Alert list with machine / anomaly type / date range filtering
+- [x] Alert detail: audio player, waveform visualization, mel spectrogram
+- [x] Annotation form: reason (machine-scoped), action, free-text comment
+- [x] Baseline audio comparison per machine
+- [x] Dashboard: stats, machine health breakdown, recent alerts
+- [x] Settings: machine, reason (machine-scoped), action CRUD with active-state toggling
+- [x] Contract-first API: OpenAPI spec, generated TypeScript client
+- [x] Audit log: append-only change history on every annotation and settings mutation
+- [x] Backend test suite (pytest)
+- [x] Frontend unit tests (vitest + testing-library)
 
 ## Tech Stack
 
@@ -18,11 +28,31 @@ A fullstack web application for monitoring industrial machine anomaly alerts. Op
 | Frontend   | React 19, TanStack Start (SSR), TanStack Router, TanStack Query, TanStack Form |
 | UI         | Tailwind CSS v4, shadcn/ui, Base UI                                            |
 | Backend    | FastAPI, SQLAlchemy async, Alembic, Python 3.13                                |
-| Database   | SQLite (dev), PostgreSQL (prod)                                                |
+| Database   | PostgreSQL + TimescaleDB                                                       |
+| Storage    | RustFS (S3-compatible object storage) — audio, waveform cache, spectrograms    |
 | Monorepo   | Turborepo, Bun 1.3.9                                                           |
-| Deployment | Cloudflare Workers via Alchemy                                                 |
+| Deployment | Docker Compose + Cloudflare Tunnel                                             |
 | Secrets    | Infisical (self-hosted)                                                        |
-| Linting    | Oxlint + Oxfmt                                                                 |
+| Linting    | Oxlint + Oxfmt (frontend), Ruff (backend)                                      |
+| Typing     | TypeScript strict + `tsc` (frontend), ty (backend, Python 3.13)                |
+| Testing    | Vitest + Testing Library (frontend), pytest (backend)                          |
+
+## Architecture Overview
+
+The frontend (TanStack Start, SSR) communicates with a FastAPI backend over HTTP. The backend persists relational data (alerts, machines, reasons, actions) in PostgreSQL; the `audit_log` table uses a TimescaleDB hypertable for append-only mutation history with automatic compression on cold rows. All binary assets (audio WAVs, spectrogram PNGs, waveform JSON) are stored in RustFS — an S3-compatible object store. Audio and spectrograms are served via presigned S3 redirect URLs; waveform data goes through a three-tier cache before reaching the client.
+
+See [`docs/architecture.md`](docs/architecture.md) for the full data model, API surface, and component map.
+
+## Engineering Decisions
+
+- **TanStack Start over Next.js** — edge SSR with file-based routing and first-class TanStack Query integration; no framework lock-in for signal processing-heavy data flows
+- **FastAPI + librosa** — Python's signal processing ecosystem (librosa, numpy, scipy) is the natural choice for audio analysis; EE background informs mel spectrogram parameter selection (fmax=8 kHz, 128 mel bins)
+- **PostgreSQL + TimescaleDB** — relational data (alerts, machines, reasons, actions) lives in PostgreSQL; the `audit_log` table is a TimescaleDB hypertable with automatic compression on cold rows, reducing storage cost for the append-only history
+- **Three-tier waveform cache** — hot path: in-memory dict (zero I/O); warm path: pre-computed JSON in S3 (one network round-trip); cold path: librosa computation + S3 upload; subsequent requests never recompute
+- **Contract-first API** — FastAPI generates the OpenAPI spec; TypeScript client is generated via hey-api; CI verifies the client is in sync; no client/server drift
+- **S3/RustFS object storage** — binary assets are decoupled from the app server; audio and spectrograms are served via presigned redirect (no proxy buffering)
+- **Infisical (self-hosted)** — zero `.env` files in the repo; secrets injected at runtime per environment (dev/staging/prod) via `infisical run`; single source of truth for credentials across the monorepo
+- **Turborepo monorepo** — single atomic changesets, shared TypeScript config, parallel builds; `bun run dev` starts both apps with Infisical env injection
 
 ## Project Structure
 
@@ -125,22 +155,64 @@ bun run dev:web      # frontend only
 bun run dev:server   # backend only
 ```
 
+### Run all tests
+
+```bash
+bun run test
+```
+
+Runs both frontend (Vitest) and backend (pytest) via Turborepo.
+
+### Backend
+
+```bash
+uv run --directory apps/server pytest
+```
+
+Covers: alert CRUD, filtering by machine/anomaly/date, annotation validation (inactive reasons, cross-machine reasons), audit log entries.
+
+### Frontend
+
+```bash
+bun run test --filter=web
+```
+
+Covers: StatsCard rendering variants, SeverityBadge classification, alert list item display.
+
+## Deployment
+
+The frontend (TanStack Start / Nitro node-server preset) and backend (FastAPI) each run in a Docker container, orchestrated with Docker Compose. Traffic is routed via Cloudflare Tunnel — no public IP required. Secrets are injected at runtime from Infisical.
+
+Currently deployed on a local server (GCP trial expired).
+
 ## Available Scripts
 
-| Command                   | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `bun run dev`             | Start all apps (Turborepo, Infisical env injected)     |
-| `bun run dev:web`         | Frontend only                                          |
-| `bun run dev:server`      | Backend only                                           |
-| `bun run build`           | Production build                                       |
-| `bun run db:migrate`      | Apply pending Alembic migrations                       |
-| `bun run seed`            | Seed machines, reasons, actions, dataset alerts        |
-| `bun run seed:dev`        | As above + dev-only sample alerts                      |
-| `bun run check`           | Run Oxlint + Oxfmt (lint and format fix)               |
-| `bun run check:types`     | TypeScript type check (all apps)                       |
-| `bun run generate-client` | Regenerate OpenAPI TypeScript client from FastAPI spec |
-| `bun run deploy`          | Deploy frontend to Cloudflare Workers                  |
-| `bun run destroy`         | Teardown Cloudflare Workers deployment                 |
+| Command                   | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
+| `bun run dev`             | Start all apps (Turborepo, Infisical env injected)            |
+| `bun run dev:web`         | Frontend only                                                 |
+| `bun run dev:server`      | Backend only                                                  |
+| `bun run build`           | Production build                                              |
+| `bun run db:migrate`      | Apply pending Alembic migrations                              |
+| `bun run seed`            | Seed machines, reasons, actions, dataset alerts               |
+| `bun run seed:dev`        | As above + dev-only sample alerts                             |
+| `bun run check`           | Run Oxlint + Oxfmt (lint and format fix)                      |
+| `bun run check:types`     | TypeScript type check (all apps)                              |
+| `bun run check:lint`      | Run linters (Oxlint for frontend, Ruff for backend) via Turbo |
+| `bun run test`            | Run all test suites (Vitest + pytest) via Turbo               |
+| `bun run generate:client` | Regenerate OpenAPI TypeScript client from FastAPI spec        |
+| `bun run deploy`          | Deploy frontend to Cloudflare Workers (Alchemy — legacy)      |
+| `bun run destroy`         | Teardown Cloudflare Workers deployment (Alchemy — legacy)     |
+
+## Code Generation
+
+The TypeScript API client (`apps/web/src/lib/api-client/`) is auto-generated from the FastAPI OpenAPI spec. Regenerate after backend schema changes:
+
+```bash
+bun run generate:client
+```
+
+CI verifies the generated client is in sync via `bun run verify:generated:client`.
 
 ## Database Migrations
 
@@ -148,28 +220,7 @@ Alembic manages all schema changes. The app startup flow does **not** call `SQLA
 
 See [`apps/server/MIGRATION_GUIDE.md`](apps/server/MIGRATION_GUIDE.md) for the full Alembic workflow reference.
 
-## Deployment
-
-Frontend deploys to Cloudflare Workers via [Alchemy](https://github.com/sam-goodwin/alchemy). Deployment requires a locally generated Alchemy config (`.alchemy/local/wrangler.jsonc`).
-
-```bash
-bun run deploy    # deploy
-bun run destroy   # teardown
-```
-
-The backend is not deployed via Alchemy — host it separately (e.g., a VPS, Railway, or Fly.io) with a PostgreSQL `DATABASE_URL` set in Infisical under the target environment.
-
-## Code Generation
-
-The TypeScript API client (`apps/web/src/lib/api-client/`) is auto-generated from the FastAPI OpenAPI spec. Regenerate after backend schema changes:
-
-```bash
-bun run generate-client
-```
-
-CI verifies the generated client is in sync via `bun run verify-generated-client`.
-
-## Reference Docs
+## Documentation
 
 | Document                                                           | Contents                                           |
 | ------------------------------------------------------------------ | -------------------------------------------------- |
