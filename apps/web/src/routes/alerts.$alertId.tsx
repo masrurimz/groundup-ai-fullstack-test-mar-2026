@@ -19,8 +19,10 @@ import {
   fetchWaveform,
   getAlertAudioUrl,
   getAlertSpectrogramUrl,
+  updateAlert,
   type WaveformResponse,
 } from "../lib/api/alerts";
+import { fetchActions, fetchReasons } from "../lib/api/lookup";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
 export const Route = createFileRoute("/alerts/$alertId")({
@@ -30,13 +32,87 @@ export const Route = createFileRoute("/alerts/$alertId")({
 function AlertDetailPage() {
   const navigate = useNavigate();
   const { alertId } = Route.useParams();
-  const { alerts, isLoading: alertsLoading, error } = useAlertsApi();
+  const { alerts, isLoading: alertsLoading, error, refetch } = useAlertsApi();
+  const [reasonOptions, setReasonOptions] = useState<string[]>([]);
+  const [actionOptions, setActionOptions] = useState<string[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [suspectedReason, setSuspectedReason] = useState("");
+  const [actionRequired, setActionRequired] = useState("");
+  const [comment, setComment] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   const selectedAlert = useMemo(() => {
     return alerts.find((alert) => alert.id === alertId);
   }, [alerts, alertId]);
 
   const machineLabel = selectedAlert?.machine ?? "CNC Machine";
+
+  useEffect(() => {
+    if (!selectedAlert) {
+      return;
+    }
+
+    setSuspectedReason(selectedAlert.suspected_reason ?? "");
+    setActionRequired(selectedAlert.action ?? "");
+    setComment(selectedAlert.comment ?? "");
+  }, [selectedAlert]);
+
+  useEffect(() => {
+    if (!selectedAlert) {
+      return;
+    }
+
+    let cancelled = false;
+    setLookupLoading(true);
+    setLookupError(null);
+
+    Promise.all([fetchReasons(selectedAlert.machine), fetchActions()])
+      .then(([reasons, actions]) => {
+        if (cancelled) {
+          return;
+        }
+
+        setReasonOptions(reasons);
+        setActionOptions(actions);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLookupError("Unable to load reason/action options from API.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLookupLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAlert]);
+
+  const handleUpdate = useCallback(async () => {
+    setIsUpdating(true);
+    setUpdateError(null);
+    setUpdateSuccess(false);
+
+    try {
+      await updateAlert(alertId, {
+        suspected_reason: suspectedReason || null,
+        action: actionRequired || null,
+        comment: comment.trim() ? comment.trim() : null,
+      });
+      await refetch();
+      setUpdateSuccess(true);
+    } catch {
+      setUpdateError("Failed to update alert details. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [actionRequired, alertId, comment, refetch, suspectedReason]);
 
   if (alertsLoading) {
     return (
@@ -107,29 +183,55 @@ function AlertDetailPage() {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <SelectField
               label="Suspected Reason"
-              options={["Unknown Anomaly", "Bearing Failure", "Alignment Issue"]}
+              value={suspectedReason}
+              options={reasonOptions}
+              placeholder="Select Reason"
+              disabled={lookupLoading || isUpdating}
+              onChange={setSuspectedReason}
             />
             <SelectField
               label="Action Required"
-              options={[
-                "Select Action",
-                "Scheduled Maintenance",
-                "Emergency Shutdown",
-                "Ignore / False Alarm",
-              ]}
+              value={actionRequired}
+              options={actionOptions}
+              placeholder="Select Action"
+              disabled={lookupLoading || isUpdating}
+              onChange={setActionRequired}
             />
           </div>
+          {lookupError ? (
+            <p className="text-sm text-amber-700 dark:text-amber-400">{lookupError}</p>
+          ) : null}
 
           <div>
             <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
               Comments
             </label>
-            <Textarea rows={6} />
+            <Textarea
+              rows={6}
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              disabled={isUpdating}
+            />
           </div>
 
+          {updateError ? (
+            <p className="text-sm text-red-600 dark:text-red-400">{updateError}</p>
+          ) : null}
+          {updateSuccess ? (
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">
+              Alert updated successfully.
+            </p>
+          ) : null}
+
           <div className="pt-4">
-            <Button className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700">
-              Update
+            <Button
+              className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700"
+              onClick={() => {
+                void handleUpdate();
+              }}
+              disabled={isUpdating || lookupLoading}
+            >
+              {isUpdating ? "Updating..." : "Update"}
             </Button>
           </div>
         </div>
@@ -478,18 +580,40 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
 // Select Field
 // ---------------------------------------------------------------------------
 
-function SelectField({ label, options }: { label: string; options: string[] }) {
+function SelectField({
+  label,
+  options,
+  value,
+  placeholder,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  const normalizedOptions = useMemo(() => {
+    if (!value || options.includes(value)) {
+      return options;
+    }
+
+    return [value, ...options];
+  }, [options, value]);
+
   return (
     <div>
       <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
         {label}
       </label>
-      <Select>
+      <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className="w-full rounded-md">
-          <SelectValue placeholder={options[0]} />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
+          {normalizedOptions.map((option) => (
             <SelectItem key={option} value={option}>
               {option}
             </SelectItem>

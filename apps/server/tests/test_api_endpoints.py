@@ -7,7 +7,8 @@ async def test_list_alerts_returns_records(test_client: AsyncClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert data[0]["machine"] == "CNC Machine"
+    assert data[0]["machine"] == "Milling Machine"
+    assert data[1]["machine"] == "CNC Machine"
 
 
 async def test_list_alerts_filter_by_anomaly(test_client: AsyncClient) -> None:

@@ -1,4 +1,6 @@
 from pathlib import Path
+from threading import Lock
+from typing import TypedDict
 
 import librosa
 import librosa.display
@@ -12,6 +14,20 @@ FMAX_HZ = 8000
 N_MELS = 128
 HOP_LENGTH = 512
 N_FFT = 2048
+
+class WaveformData(TypedDict):
+    sample_rate: int
+    duration_seconds: float
+    times: list[float]
+    amplitudes: list[float]
+
+_waveform_cache_lock = Lock()
+_waveform_cache: dict[tuple[str, int, int], WaveformData] = {}
+
+
+def _cache_key(path: Path) -> tuple[str, int, int]:
+    stat = path.stat()
+    return (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
 
 
 def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
@@ -49,9 +65,7 @@ def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
     return output_path
 
 
-def generate_waveform(
-    wav_path: Path, max_points: int = 2048
-) -> dict[str, float | int | list[float]]:
+def generate_waveform(wav_path: Path, max_points: int = 2048) -> WaveformData:
     y, sr = librosa.load(str(wav_path), sr=None, mono=True)
 
     sample_step = max(1, len(y) // max_points)
@@ -64,3 +78,25 @@ def generate_waveform(
         "times": [float(t) for t in times],
         "amplitudes": [float(a) for a in sampled],
     }
+
+
+def generate_waveform_cached(wav_path: Path, max_points: int = 2048) -> WaveformData:
+    key = _cache_key(wav_path)
+    with _waveform_cache_lock:
+        cached = _waveform_cache.get(key)
+
+    if cached is not None:
+        return cached
+
+    waveform = generate_waveform(wav_path=wav_path, max_points=max_points)
+    with _waveform_cache_lock:
+        _waveform_cache[key] = waveform
+
+    return waveform
+
+
+def ensure_spectrogram(wav_path: Path, output_path: Path) -> Path:
+    if output_path.exists():
+        return output_path
+
+    return generate_spectrogram(wav_path=wav_path, output_path=output_path)
