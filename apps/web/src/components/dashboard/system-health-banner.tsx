@@ -3,9 +3,10 @@ import type { DashboardOverview } from "@/lib/api-client";
 interface SystemHealthBannerProps {
   overview: DashboardOverview | undefined;
   isLoading: boolean;
+  days: number;
 }
 
-export function SystemHealthBanner({ overview, isLoading }: SystemHealthBannerProps) {
+export function SystemHealthBanner({ overview, isLoading, days }: SystemHealthBannerProps) {
   if (isLoading) {
     return <div className="mb-6 h-12 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />;
   }
@@ -29,13 +30,15 @@ export function SystemHealthBanner({ overview, isLoading }: SystemHealthBannerPr
             isHealthy ? "text-green-800 dark:text-green-300" : "text-amber-800 dark:text-amber-300"
           }`}
         >
-          {isHealthy ? "All Systems Operational" : "System Degraded"}
+          {isHealthy ? "All Systems Operational" : "System Degraded"} · Last {days}d
         </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Chip label="Machines" value={overview?.total_machines ?? 0} />
         <Chip label="Active" value={overview?.active_machines ?? 0} />
+        <Chip label="Critical" value={overview?.critical_alerts ?? 0} />
+        <Chip label="Warnings" value={overview?.warning_alerts ?? 0} />
         <Chip label="Resolved" value={`${Math.round(overview?.resolved_rate ?? 0)}%`} />
       </div>
     </div>

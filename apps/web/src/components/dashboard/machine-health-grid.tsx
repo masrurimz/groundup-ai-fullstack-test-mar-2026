@@ -1,4 +1,5 @@
 import type { MachineHealthSummary } from "@/lib/api-client";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 function statusColor(summary: MachineHealthSummary): string {
   if (summary.critical_count > 0) return "bg-red-500";
@@ -48,7 +49,22 @@ export function MachineHealthGrid({ data, isLoading }: MachineHealthGridProps) {
           className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
         >
           <div className="flex items-start gap-2">
-            <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${statusColor(machine)}`} />
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span
+                    className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full cursor-help ${statusColor(machine)}`}
+                  />
+                }
+              />
+              <TooltipContent>
+                {machine.critical_count > 0
+                  ? "Worst severity: Severe"
+                  : machine.warning_count > 0
+                    ? "Worst severity: Moderate"
+                    : "Normal — no severe/moderate alerts"}
+              </TooltipContent>
+            </Tooltip>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-50">
                 {machine.machine_name}
@@ -59,11 +75,70 @@ export function MachineHealthGrid({ data, isLoading }: MachineHealthGridProps) {
             </div>
           </div>
           <div className="mt-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${activeBadgeColor(machine.active_alerts)}`}
-            >
-              {machine.active_alerts} active
-            </span>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium cursor-help ${activeBadgeColor(machine.active_alerts)}`}
+                  >
+                    {machine.active_alerts} unresolved
+                  </span>
+                }
+              />
+              <TooltipContent>Alerts missing an action or suspected reason</TooltipContent>
+            </Tooltip>
+            {machine.total_alerts > 0 &&
+              (() => {
+                const mildCount =
+                  machine.total_alerts - machine.critical_count - machine.warning_count;
+                const p = (n: number) => Math.round((n / machine.total_alerts) * 100);
+                return (
+                  <>
+                    <div className="mt-1.5 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                      {machine.critical_count > 0 && (
+                        <div
+                          className="bg-red-500"
+                          style={{ width: `${p(machine.critical_count)}%` }}
+                        />
+                      )}
+                      {machine.warning_count > 0 && (
+                        <div
+                          className="bg-amber-400"
+                          style={{ width: `${p(machine.warning_count)}%` }}
+                        />
+                      )}
+                      {mildCount > 0 && (
+                        <div className="bg-blue-400" style={{ width: `${p(mildCount)}%` }} />
+                      )}
+                    </div>
+                    {/* Severity legend */}
+                    <div className="mt-1 flex gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                      {machine.critical_count > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+                          {machine.critical_count} severe
+                        </span>
+                      )}
+                      {machine.warning_count > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          {machine.warning_count} moderate
+                        </span>
+                      )}
+                      {machine.total_alerts - machine.critical_count - machine.warning_count >
+                        0 && (
+                        <span className="flex items-center gap-0.5">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400" />
+                          {machine.total_alerts -
+                            machine.critical_count -
+                            machine.warning_count}{" "}
+                          mild
+                        </span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
           </div>
         </div>
       ))}

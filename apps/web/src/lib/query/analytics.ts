@@ -7,8 +7,8 @@ import {
   getOverviewApiV1AnalyticsOverviewGetQueryKey,
 } from "../api-client/@tanstack/react-query.gen";
 
-export const overviewQueryOptions = () => ({
-  ...getOverviewApiV1AnalyticsOverviewGetOptions(),
+export const overviewQueryOptions = (days = 30) => ({
+  ...getOverviewApiV1AnalyticsOverviewGetOptions({ query: { days } }),
   staleTime: 30_000,
 });
 
@@ -19,12 +19,15 @@ export const alertTrendsQueryOptions = (days = 30, interval = "1 day") => ({
   staleTime: 60_000,
 });
 
-export const machineHealthQueryOptions = () => ({
-  ...getMachineHealthApiV1AnalyticsMachineHealthGetOptions(),
+export const machineHealthQueryOptions = (days = 30) => ({
+  ...getMachineHealthApiV1AnalyticsMachineHealthGetOptions({ query: { days } }),
   staleTime: 30_000,
 });
 
-export const overviewQueryKey = () => getOverviewApiV1AnalyticsOverviewGetQueryKey();
+export const overviewQueryKey = (days?: number) =>
+  getOverviewApiV1AnalyticsOverviewGetQueryKey(
+    days !== undefined ? { query: { days } } : undefined,
+  );
 
 export const alertTrendsQueryKey = (days?: number, interval?: string) =>
   getAlertTrendsApiV1AnalyticsAlertTrendsGetQueryKey(
@@ -33,4 +36,7 @@ export const alertTrendsQueryKey = (days?: number, interval?: string) =>
       : undefined,
   );
 
-export const machineHealthQueryKey = () => getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey();
+export const machineHealthQueryKey = (days?: number) =>
+  getMachineHealthApiV1AnalyticsMachineHealthGetQueryKey(
+    days !== undefined ? { query: { days } } : undefined,
+  );

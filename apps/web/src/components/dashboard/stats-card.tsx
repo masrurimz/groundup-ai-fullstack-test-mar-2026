@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export interface StatsCardProps {
-  title: string;
+  title: string | ReactNode;
   value: string | number;
   icon: ReactNode;
   description?: string;

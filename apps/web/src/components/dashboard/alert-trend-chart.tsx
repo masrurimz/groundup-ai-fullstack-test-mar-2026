@@ -1,20 +1,25 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
-import type { AlertTrendPoint } from "@/lib/api-client";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+
+export interface AlertTrendBucket {
+  bucket: string;
+  critical: number;
+  warning: number;
+  mild: number;
+  total: number;
+}
 
 const chartConfig = {
-  count: {
-    label: "Alerts",
-    color: "var(--chart-1)",
-  },
+  critical: { label: "Critical", color: "hsl(0, 72%, 51%)" },
+  warning: { label: "Warning", color: "hsl(38, 92%, 50%)" },
+  mild: { label: "Info", color: "hsl(217, 91%, 60%)" },
 } satisfies ChartConfig;
-
-const RANGE_OPTIONS = [
-  { label: "7d", value: 7 },
-  { label: "30d", value: 30 },
-  { label: "90d", value: 90 },
-] as const;
 
 function formatBucketDate(bucket: string): string {
   const date = new Date(bucket);
@@ -22,33 +27,15 @@ function formatBucketDate(bucket: string): string {
 }
 
 interface AlertTrendChartProps {
-  data: AlertTrendPoint[];
+  data: AlertTrendBucket[];
   isLoading: boolean;
-  days: number;
-  onDaysChange: (days: number) => void;
 }
 
-export function AlertTrendChart({ data, isLoading, days, onDaysChange }: AlertTrendChartProps) {
+export function AlertTrendChart({ data, isLoading }: AlertTrendChartProps) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Alert Trends</h2>
-        <div className="flex gap-1">
-          {RANGE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onDaysChange(opt.value)}
-              className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
-                days === opt.value
-                  ? "bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-900"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {isLoading ? (
@@ -63,9 +50,17 @@ export function AlertTrendChart({ data, isLoading, days, onDaysChange }: AlertTr
         <ChartContainer config={chartConfig} className="h-48 w-full">
           <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="alertFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.0} />
+              <linearGradient id="critFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.0} />
+              </linearGradient>
+              <linearGradient id="warnFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.0} />
+              </linearGradient>
+              <linearGradient id="mildFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
@@ -85,15 +80,36 @@ export function AlertTrendChart({ data, isLoading, days, onDaysChange }: AlertTr
             />
             <Tooltip
               labelFormatter={(label) => formatBucketDate(String(label))}
-              formatter={(value: number) => [value, "Alerts"]}
+              formatter={(value: number, name: string) => [
+                value,
+                chartConfig[name as keyof typeof chartConfig]?.label ?? name,
+              ]}
             />
             <Area
               type="monotone"
-              dataKey="count"
-              stroke="var(--chart-1)"
+              dataKey="critical"
+              stackId="stack"
+              stroke="hsl(0, 72%, 51%)"
               strokeWidth={2}
-              fill="url(#alertFill)"
+              fill="url(#critFill)"
             />
+            <Area
+              type="monotone"
+              dataKey="warning"
+              stackId="stack"
+              stroke="hsl(38, 92%, 50%)"
+              strokeWidth={2}
+              fill="url(#warnFill)"
+            />
+            <Area
+              type="monotone"
+              dataKey="mild"
+              stackId="stack"
+              stroke="hsl(217, 91%, 60%)"
+              strokeWidth={2}
+              fill="url(#mildFill)"
+            />
+            <ChartLegend content={<ChartLegendContent />} />
           </AreaChart>
         </ChartContainer>
       )}
