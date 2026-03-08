@@ -9,11 +9,14 @@ export type AlertView = {
   created_at: string;
   updated_at: string;
   machine: string;
+  machine_id: number | null;
   anomaly_type: string;
   sensor: string;
   sound_clip: string;
   suspected_reason: string | null;
+  suspected_reason_id: number | null;
   action: string | null;
+  action_id: number | null;
   comment: string | null;
 };
 
@@ -38,11 +41,14 @@ export function toAlertView(alert: Alert): AlertView {
     created_at: alert.timestamp,
     updated_at: alert.timestamp,
     machine: alert.machine,
+    machine_id: alert.machine_id,
     anomaly_type: alert.anomaly_type,
     sensor: alert.sensor,
     sound_clip: alert.sound_clip,
     suspected_reason: alert.suspected_reason,
+    suspected_reason_id: alert.suspected_reason_id,
     action: alert.action,
+    action_id: alert.action_id,
     comment: alert.comment,
   };
 }

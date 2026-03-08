@@ -1,3 +1,5 @@
+import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -22,6 +24,11 @@ import {
   type WaveformResponse,
 } from "../lib/api/alerts";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
+import {
+  actionsQueryOptions,
+  reasonsQueryOptions,
+  useUpdateAlertMutation,
+} from "../lib/query/options";
 
 export const Route = createFileRoute("/alerts/$alertId")({
   component: AlertDetailPage,
@@ -35,8 +42,6 @@ function AlertDetailPage() {
   const selectedAlert = useMemo(() => {
     return alerts.find((alert) => alert.id === alertId);
   }, [alerts, alertId]);
-
-  const machineLabel = selectedAlert?.machine ?? "CNC Machine";
 
   if (alertsLoading) {
     return (
@@ -98,41 +103,7 @@ function AlertDetailPage() {
           <BaselinePlaceholderPanel />
         </div>
 
-        <div className="space-y-8 pb-12">
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Equipment</h4>
-            <p className="mt-1 text-sm text-gray-600">{machineLabel}</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <SelectField
-              label="Suspected Reason"
-              options={["Unknown Anomaly", "Bearing Failure", "Alignment Issue"]}
-            />
-            <SelectField
-              label="Action Required"
-              options={[
-                "Select Action",
-                "Scheduled Maintenance",
-                "Emergency Shutdown",
-                "Ignore / False Alarm",
-              ]}
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
-              Comments
-            </label>
-            <Textarea rows={6} />
-          </div>
-
-          <div className="pt-4">
-            <Button className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700">
-              Update
-            </Button>
-          </div>
-        </div>
+        <AlertEditForm alert={selectedAlert} />
       </div>
     </section>
   );
@@ -475,27 +446,150 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
 }
 
 // ---------------------------------------------------------------------------
-// Select Field
+// Alert Edit Form – TanStack Form + TanStack Query
 // ---------------------------------------------------------------------------
 
-function SelectField({ label, options }: { label: string; options: string[] }) {
+import type { AlertView } from "../lib/api/alert-view";
+
+function AlertEditForm({ alert }: { alert: AlertView }) {
+  const machineId = alert.machine_id ?? undefined;
+
+  const reasonsQuery = useQuery(reasonsQueryOptions(machineId));
+  const actionsQuery = useQuery(actionsQueryOptions());
+  const updateMutation = useUpdateAlertMutation(Number(alert.id));
+
+  const form = useForm({
+    defaultValues: {
+      suspected_reason_id: alert.suspected_reason_id ?? (null as number | null),
+      action_id: alert.action_id ?? (null as number | null),
+      comment: alert.comment ?? "",
+    },
+    onSubmit: async ({ value }) => {
+      await updateMutation.mutateAsync({
+        suspected_reason_id: value.suspected_reason_id ?? null,
+        action_id: value.action_id ?? null,
+        comment: value.comment.trim() || null,
+      });
+    },
+  });
+
+  const reasons = reasonsQuery.data ?? [];
+  const actions = actionsQuery.data ?? [];
+  const lookupsLoading = reasonsQuery.isLoading || actionsQuery.isLoading;
+
   return (
-    <div>
-      <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
-        {label}
-      </label>
-      <Select>
-        <SelectTrigger className="w-full rounded-md">
-          <SelectValue placeholder={options[0]} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="space-y-8 pb-12">
+      <div>
+        <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Equipment</h4>
+        <p className="mt-1 text-sm text-gray-600">{alert.machine}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        {/* Suspected Reason */}
+        <form.Field name="suspected_reason_id">
+          {(field) => (
+            <div>
+              <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
+                Suspected Reason
+              </label>
+              <Select
+                value={field.state.value != null ? String(field.state.value) : undefined}
+                onValueChange={(v) => field.handleChange(v === "__none__" ? null : Number(v))}
+                disabled={lookupsLoading || form.state.isSubmitting}
+              >
+                <SelectTrigger className="w-full rounded-md">
+                  {lookupsLoading ? (
+                    <span className="text-muted-foreground">Loading…</span>
+                  ) : (
+                    <SelectValue placeholder="Select reason" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {reasons.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </form.Field>
+
+        {/* Action Required */}
+        <form.Field name="action_id">
+          {(field) => (
+            <div>
+              <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
+                Action Required
+              </label>
+              <Select
+                value={field.state.value != null ? String(field.state.value) : undefined}
+                onValueChange={(v) => field.handleChange(v === "__none__" ? null : Number(v))}
+                disabled={lookupsLoading || form.state.isSubmitting}
+              >
+                <SelectTrigger className="w-full rounded-md">
+                  {lookupsLoading ? (
+                    <span className="text-muted-foreground">Loading…</span>
+                  ) : (
+                    <SelectValue placeholder="Select action" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {actions.map((a) => (
+                    <SelectItem key={a.id} value={String(a.id)}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </form.Field>
+      </div>
+
+      {/* Comment */}
+      <form.Field name="comment">
+        {(field) => (
+          <div>
+            <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
+              Comments
+            </label>
+            <Textarea
+              rows={6}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              disabled={form.state.isSubmitting}
+            />
+          </div>
+        )}
+      </form.Field>
+
+      {/* Status */}
+      {updateMutation.isError ? (
+        <p className="text-sm text-red-600">Failed to update alert. Please try again.</p>
+      ) : null}
+      {updateMutation.isSuccess ? (
+        <p className="text-sm text-emerald-700">Alert updated successfully.</p>
+      ) : null}
+
+      {/* Submit */}
+      <div className="pt-4">
+        <form.Subscribe selector={(s) => s.isSubmitting}>
+          {(isSubmitting) => (
+            <Button
+              className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700"
+              onClick={() => void form.handleSubmit()}
+              disabled={isSubmitting || lookupsLoading}
+            >
+              {isSubmitting ? "Updating…" : "Update"}
+            </Button>
+          )}
+        </form.Subscribe>
+      </div>
     </div>
   );
 }
