@@ -1,7 +1,7 @@
 import { Outlet, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useMemo } from "react";
 
-import { AlertsSidebar, type MachineStats } from "@/components/alerts/alerts-sidebar";
+import { AlertsSidebar } from "@/components/alerts/alerts-sidebar";
 
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 
@@ -24,19 +24,6 @@ function AlertsLayout() {
 
   const machineOptions = useMemo(() => [...new Set(alerts.map((a) => a.machine))].sort(), [alerts]);
 
-  const machineStats: MachineStats[] = useMemo(() => {
-    const map = new Map<string, { alertCount: number; activeCount: number }>();
-    for (const alert of alerts) {
-      const stats = map.get(alert.machine) ?? { alertCount: 0, activeCount: 0 };
-      stats.alertCount += 1;
-      if (alert.status === "active") stats.activeCount += 1;
-      map.set(alert.machine, stats);
-    }
-    return [...map.entries()]
-      .map(([name, stats]) => ({ name, ...stats }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [alerts]);
-
   const filteredAlerts = useMemo(
     () => (machine ? alerts.filter((a) => a.machine === machine) : alerts),
     [alerts, machine],
@@ -47,24 +34,12 @@ function AlertsLayout() {
     [filteredAlerts],
   );
 
-  const handleSelectMachine = (name: string) => {
-    void navigate({ to: "/alerts", search: { machine: name } });
-  };
-
-  const handleMachineChange = (value: string) => {
+  const handleMachineChange = (value: string | undefined) => {
     void navigate({
       to: "/alerts",
       search: { machine: value },
       replace: true,
     });
-  };
-
-  const handleBack = () => {
-    if (alertId) {
-      void navigate({ to: "/alerts", search: { machine } });
-    } else {
-      void navigate({ to: "/alerts", search: { machine: undefined } });
-    }
   };
 
   const handleSelectAlert = (id: string) => {
@@ -80,13 +55,11 @@ function AlertsLayout() {
       <AlertsSidebar
         alerts={filteredAlerts}
         selectedAlertId={alertId}
-        machineStats={machineStats}
         machineOptions={machineOptions}
         selectedMachine={machine}
         newAlertCount={newAlertCount}
-        onSelectMachine={handleSelectMachine}
         onMachineChange={handleMachineChange}
-        onBack={handleBack}
+        onBack={() => navigate({ to: "/" })}
         onSelectAlert={handleSelectAlert}
       />
 
