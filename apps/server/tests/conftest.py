@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.core.config import settings
 from app.core.db import get_session
 from app.main import app
-from app.models import Action, Alert, Base, Machine, Reason
+from app.models import Action, Alert, Base, Machine, Reason, Sensor
+
+TEST_DATABASE_URL = "postgresql+asyncpg://groundup:devpassword@localhost:5433/groundup_test"
 
 
 def _create_test_wav(
@@ -30,11 +32,11 @@ def _create_test_wav(
 
 @pytest.fixture
 async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
-    db_path = tmp_path / "test.db"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}")
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
 
     audio_dir = tmp_path / "audio"
@@ -60,6 +62,27 @@ async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
             updated_at=datetime.fromtimestamp(1629058322, tz=UTC),
         )
         session.add_all([cnc_machine, milling_machine])
+        await session.flush()
+
+        cnc_sensor = Sensor(
+            machine_id=cnc_machine.id,
+            serial="1234567890",
+            name="Sensor 1234567890",
+            key="1234567890",
+            is_active=True,
+            created_at=datetime.fromtimestamp(1628676001, tz=UTC),
+            updated_at=datetime.fromtimestamp(1628676001, tz=UTC),
+        )
+        milling_sensor = Sensor(
+            machine_id=milling_machine.id,
+            serial="9876543210",
+            name="Sensor 9876543210",
+            key="9876543210",
+            is_active=True,
+            created_at=datetime.fromtimestamp(1629058322, tz=UTC),
+            updated_at=datetime.fromtimestamp(1629058322, tz=UTC),
+        )
+        session.add_all([cnc_sensor, milling_sensor])
         await session.flush()
 
         spindle_reason = Reason(
@@ -103,6 +126,7 @@ async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
                     machine_id=cnc_machine.id,
                     anomaly_type="Mild",
                     sensor="1234567890",
+                    sensor_id=cnc_sensor.id,
                     sound_clip="1.wav",
                     suspected_reason=None,
                     suspected_reason_id=None,
@@ -118,6 +142,7 @@ async def test_client(tmp_path: Path) -> AsyncGenerator[AsyncClient]:
                     machine_id=milling_machine.id,
                     anomaly_type="Severe",
                     sensor="9876543210",
+                    sensor_id=milling_sensor.id,
                     sound_clip="1.wav",
                     suspected_reason=None,
                     suspected_reason_id=None,
