@@ -4,7 +4,7 @@ import { client } from "../api-client/client.gen";
 
 let configured = false;
 
-export function getApiClient() {
+export function initApiClient() {
   if (!configured) {
     client.setConfig({
       baseUrl: env.VITE_SERVER_URL,
@@ -12,6 +12,9 @@ export function getApiClient() {
     });
     configured = true;
   }
+}
 
+export function getApiClient() {
+  initApiClient();
   return client;
 }

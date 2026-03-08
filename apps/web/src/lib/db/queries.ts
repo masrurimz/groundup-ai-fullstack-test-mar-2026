@@ -6,7 +6,7 @@
 import { eq, isNull, not, or } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 
-import type { Alert } from "../api/alerts";
+import type { Alert } from "./collections";
 import { alertsCollection } from "./collections";
 
 export type AlertView = {

@@ -7,8 +7,10 @@ import "../runtime/ensure-crypto-random-uuid";
 import { createCollection } from "@tanstack/db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
-import { fetchAlerts, type Alert } from "../api/alerts";
+import { listAlertsApiV1AlertsGet, type AlertResponse } from "../api-client";
 import { getQueryClient } from "../query/client";
+
+export type Alert = AlertResponse;
 
 /**
  * Alerts collection - uses query collection pattern to sync with backend API
@@ -17,7 +19,10 @@ import { getQueryClient } from "../query/client";
 export const alertsCollection = createCollection(
   queryCollectionOptions<Alert>({
     queryKey: ["alerts"],
-    queryFn: () => fetchAlerts(),
+    queryFn: async () => {
+      const { data } = await listAlertsApiV1AlertsGet({ throwOnError: true });
+      return data ?? [];
+    },
     queryClient: getQueryClient(),
     getKey: (item) => item.id,
   }),

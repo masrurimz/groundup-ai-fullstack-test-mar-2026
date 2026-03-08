@@ -13,8 +13,6 @@ export {
   ApiError,
   type ApiResponse,
 } from "./http";
-export { fetchAlerts, fetchAlert, updateAlert, type Alert, type AlertsQuery } from "./alerts";
-export { fetchLookupItems, fetchLookupByCategory, type LookupItem } from "./lookup";
 
 // Re-export database collections and query hooks from db module
 export { alertsCollection } from "../db";

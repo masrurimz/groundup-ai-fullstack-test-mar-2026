@@ -1,4 +1,4 @@
-import type { Alert } from "./alerts";
+import type { AlertResponse as Alert } from "../api-client";
 
 export type AlertView = {
   id: string;

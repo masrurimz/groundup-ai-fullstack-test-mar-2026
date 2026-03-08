@@ -3,8 +3,11 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 
 import Loader from "./components/loader";
 import "./index.css";
+import { initApiClient } from "./lib/api/client";
 import { getQueryClient } from "./lib/query/client";
 import { routeTree } from "./routeTree.gen";
+
+initApiClient();
 
 export const getRouter = () => {
   const queryClient = getQueryClient();

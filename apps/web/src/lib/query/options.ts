@@ -1,82 +1,72 @@
 /**
  * Centralized queryOptions factories + co-located mutation hooks.
  *
- * All queryFns use the generated OpenAPI SDK via api adapter functions.
- * Mutation hooks call queryClient.invalidateQueries using the shared queryKeys.
- *
- * NOTE: The API client is configured with throwOnError: true at runtime, but
- * the generated SDK types ThrowOnError as false by default. We use a typed
- * unwrap helper so TypeScript is satisfied while runtime throws on error.
+ * Delegates to the generated TanStack Query helpers from @hey-api/openapi-ts.
+ * Mutation hooks use the generated SDK functions directly with custom
+ * onSuccess invalidation logic using generated query keys.
  */
 
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import {
+  getActionsApiV1LookupActionsGetOptions,
+  getActionsApiV1LookupActionsGetQueryKey,
+  getAlertApiV1AlertsAlertIdGetQueryKey,
+  getMachinesApiV1LookupMachinesGetOptions,
+  getMachinesApiV1LookupMachinesGetQueryKey,
+  getReasonsApiV1LookupReasonsGetOptions,
+  getReasonsApiV1LookupReasonsGetQueryKey,
+  listAlertsApiV1AlertsGetOptions,
+  listAlertsApiV1AlertsGetQueryKey,
+} from "../api-client/@tanstack/react-query.gen";
 import {
   createActionApiV1LookupActionsPost,
   createMachineApiV1LookupMachinesPost,
   createReasonApiV1LookupReasonsPost,
-  getActionsApiV1LookupActionsGet,
-  getMachinesApiV1LookupMachinesGet,
-  getReasonsApiV1LookupReasonsGet,
-  listAlertsApiV1AlertsGet,
   updateActionApiV1LookupActionsActionIdPatch,
   updateAlertApiV1AlertsAlertIdPatch,
   updateMachineApiV1LookupMachinesMachineIdPatch,
   updateReasonApiV1LookupReasonsReasonIdPatch,
-  type ActionCreateRequest,
-  type ActionUpdateRequest,
-  type AlertResponse,
-  type AlertUpdateRequest,
-  type LookupItem,
-  type MachineCreateRequest,
-  type MachineUpdateRequest,
-  type ReasonCreateRequest,
-  type ReasonUpdateRequest,
+} from "../api-client/sdk.gen";
+import type {
+  ActionCreateRequest,
+  ActionUpdateRequest,
+  AlertUpdateRequest,
+  MachineCreateRequest,
+  MachineUpdateRequest,
+  ReasonCreateRequest,
+  ReasonUpdateRequest,
 } from "../api-client";
-import { getApiClient } from "../api/client";
-import { queryKeys } from "./keys";
-
-// The generated client ThrowOnError defaults to false in types, but at runtime
-// the client is configured with throwOnError:true, so the resolved value IS the
-// unwrapped data (errors throw). This cast bridges the type gap.
-function asData<T>(res: unknown): T {
-  return res as T;
-}
 
 // ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
 
-export const alertsQueryOptions = () =>
-  queryOptions({
-    queryKey: queryKeys.alerts,
-    queryFn: async () =>
-      asData<AlertResponse[]>(await listAlertsApiV1AlertsGet({ client: getApiClient() })) ?? [],
-  });
+export const alertsQueryOptions = () => listAlertsApiV1AlertsGetOptions();
 
 // ---------------------------------------------------------------------------
 // Machines
 // ---------------------------------------------------------------------------
 
 export const machinesQueryOptions = (includeInactive = false) =>
-  queryOptions({
-    queryKey: includeInactive ? queryKeys.machinesWithInactive : queryKeys.machines,
-    queryFn: async () =>
-      asData<LookupItem[]>(
-        await getMachinesApiV1LookupMachinesGet({
-          client: getApiClient(),
-          query: includeInactive ? { include_inactive: true } : undefined,
-        }),
-      ) ?? [],
+  getMachinesApiV1LookupMachinesGetOptions({
+    query: includeInactive ? { include_inactive: true } : undefined,
   });
 
 export function useCreateMachineMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: MachineCreateRequest) =>
-      createMachineApiV1LookupMachinesPost({ client: getApiClient(), body }),
+    mutationFn: async (body: MachineCreateRequest) => {
+      const { data } = await createMachineApiV1LookupMachinesPost({
+        body,
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "machines"] });
+      void queryClient.invalidateQueries({
+        queryKey: getMachinesApiV1LookupMachinesGetQueryKey(),
+      });
     },
   });
 }
@@ -84,14 +74,24 @@ export function useCreateMachineMutation() {
 export function useUpdateMachineMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ machine_id, body }: { machine_id: number; body: MachineUpdateRequest }) =>
-      updateMachineApiV1LookupMachinesMachineIdPatch({
-        client: getApiClient(),
+    mutationFn: async ({
+      machine_id,
+      body,
+    }: {
+      machine_id: number;
+      body: MachineUpdateRequest;
+    }) => {
+      const { data } = await updateMachineApiV1LookupMachinesMachineIdPatch({
         path: { machine_id },
         body,
-      }),
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "machines"] });
+      void queryClient.invalidateQueries({
+        queryKey: getMachinesApiV1LookupMachinesGetQueryKey(),
+      });
     },
   });
 }
@@ -101,29 +101,27 @@ export function useUpdateMachineMutation() {
 // ---------------------------------------------------------------------------
 
 export const reasonsQueryOptions = (machineId?: number, includeInactive = false) =>
-  queryOptions({
-    queryKey: includeInactive
-      ? queryKeys.reasonsWithInactive(machineId)
-      : queryKeys.reasons(machineId),
-    queryFn: async () =>
-      asData<LookupItem[]>(
-        await getReasonsApiV1LookupReasonsGet({
-          client: getApiClient(),
-          query: {
-            ...(machineId != null ? { machine_id: machineId } : {}),
-            ...(includeInactive ? { include_inactive: true } : {}),
-          },
-        }),
-      ) ?? [],
+  getReasonsApiV1LookupReasonsGetOptions({
+    query: {
+      ...(machineId != null ? { machine_id: machineId } : {}),
+      ...(includeInactive ? { include_inactive: true } : {}),
+    },
   });
 
 export function useCreateReasonMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: ReasonCreateRequest) =>
-      createReasonApiV1LookupReasonsPost({ client: getApiClient(), body }),
+    mutationFn: async (body: ReasonCreateRequest) => {
+      const { data } = await createReasonApiV1LookupReasonsPost({
+        body,
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "reasons"] });
+      void queryClient.invalidateQueries({
+        queryKey: getReasonsApiV1LookupReasonsGetQueryKey(),
+      });
     },
   });
 }
@@ -131,14 +129,18 @@ export function useCreateReasonMutation() {
 export function useUpdateReasonMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ reason_id, body }: { reason_id: number; body: ReasonUpdateRequest }) =>
-      updateReasonApiV1LookupReasonsReasonIdPatch({
-        client: getApiClient(),
+    mutationFn: async ({ reason_id, body }: { reason_id: number; body: ReasonUpdateRequest }) => {
+      const { data } = await updateReasonApiV1LookupReasonsReasonIdPatch({
         path: { reason_id },
         body,
-      }),
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "reasons"] });
+      void queryClient.invalidateQueries({
+        queryKey: getReasonsApiV1LookupReasonsGetQueryKey(),
+      });
     },
   });
 }
@@ -148,24 +150,24 @@ export function useUpdateReasonMutation() {
 // ---------------------------------------------------------------------------
 
 export const actionsQueryOptions = (includeInactive = false) =>
-  queryOptions({
-    queryKey: includeInactive ? queryKeys.actionsWithInactive : queryKeys.actions,
-    queryFn: async () =>
-      asData<LookupItem[]>(
-        await getActionsApiV1LookupActionsGet({
-          client: getApiClient(),
-          query: includeInactive ? { include_inactive: true } : undefined,
-        }),
-      ) ?? [],
+  getActionsApiV1LookupActionsGetOptions({
+    query: includeInactive ? { include_inactive: true } : undefined,
   });
 
 export function useCreateActionMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: ActionCreateRequest) =>
-      createActionApiV1LookupActionsPost({ client: getApiClient(), body }),
+    mutationFn: async (body: ActionCreateRequest) => {
+      const { data } = await createActionApiV1LookupActionsPost({
+        body,
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "actions"] });
+      void queryClient.invalidateQueries({
+        queryKey: getActionsApiV1LookupActionsGetQueryKey(),
+      });
     },
   });
 }
@@ -173,14 +175,18 @@ export function useCreateActionMutation() {
 export function useUpdateActionMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ action_id, body }: { action_id: number; body: ActionUpdateRequest }) =>
-      updateActionApiV1LookupActionsActionIdPatch({
-        client: getApiClient(),
+    mutationFn: async ({ action_id, body }: { action_id: number; body: ActionUpdateRequest }) => {
+      const { data } = await updateActionApiV1LookupActionsActionIdPatch({
         path: { action_id },
         body,
-      }),
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["lookup", "actions"] });
+      void queryClient.invalidateQueries({
+        queryKey: getActionsApiV1LookupActionsGetQueryKey(),
+      });
     },
   });
 }
@@ -192,16 +198,24 @@ export function useUpdateActionMutation() {
 export function useUpdateAlertMutation(alertId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: AlertUpdateRequest) =>
-      updateAlertApiV1AlertsAlertIdPatch({
-        client: getApiClient(),
+    mutationFn: async (body: AlertUpdateRequest) => {
+      const { data } = await updateAlertApiV1AlertsAlertIdPatch({
         path: { alert_id: alertId },
         body,
-      }),
+        throwOnError: true,
+      });
+      return data;
+    },
     onSuccess: () => {
       void Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.alerts }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.alert(alertId) }),
+        queryClient.invalidateQueries({
+          queryKey: listAlertsApiV1AlertsGetQueryKey(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: getAlertApiV1AlertsAlertIdGetQueryKey({
+            path: { alert_id: alertId },
+          }),
+        }),
       ]);
     },
   });

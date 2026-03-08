@@ -21,12 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Activity, AudioLines, Loader2 } from "lucide-react";
 
-import {
-  fetchWaveform,
-  getAlertAudioUrl,
-  getAlertSpectrogramUrl,
-  type WaveformResponse,
-} from "../lib/api/alerts";
+import { getWaveformApiV1AlertsAlertIdWaveformGet, type WaveformResponse } from "../lib/api-client";
+import { getAlertAudioUrl, getAlertSpectrogramUrl } from "../lib/api/alert-assets";
+import { getApiClient } from "../lib/api/client";
 import type { AlertView } from "../lib/api/alert-view";
 import { useAlertsApi } from "../lib/api/use-alerts-api";
 import {
@@ -128,8 +125,12 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
     setWaveformLoading(true);
     setWaveformError(false);
 
-    fetchWaveform(alertId)
-      .then((data) => {
+    getWaveformApiV1AlertsAlertIdWaveformGet({
+      client: getApiClient(),
+      throwOnError: true,
+      path: { alert_id: Number(alertId) },
+    })
+      .then(({ data }) => {
         if (!cancelled) setWaveform(data);
       })
       .catch(() => {
