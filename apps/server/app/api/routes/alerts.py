@@ -26,8 +26,11 @@ async def _get_alert_or_404(session: AsyncSession, alert_id: uuid.UUID) -> Alert
 
 async def _get_baseline_audio_key_or_404(
     session: AsyncSession, alert_id: uuid.UUID
-) -> tuple[Machine, str]:
-    """Resolve alert -> machine -> baseline S3 key, raising 404 at each step."""
+) -> tuple[str, str]:
+    """Resolve alert -> machine -> baseline S3 key, raising 404 at each step.
+
+    Returns (audio_key, sound_clip) where sound_clip is the non-None baseline filename.
+    """
     alert = await _get_alert_or_404(session, alert_id)
     if alert.machine_id is None:
         raise HTTPException(status_code=404, detail="Alert has no associated machine")
@@ -37,10 +40,11 @@ async def _get_baseline_audio_key_or_404(
         raise HTTPException(status_code=404, detail="Machine not found")
     if not machine.baseline_sound_clip:
         raise HTTPException(status_code=404, detail="No baseline audio available for this machine")
-    s3_key = f"audio/{machine.baseline_sound_clip}"
+    sound_clip: str = machine.baseline_sound_clip
+    s3_key = f"audio/{sound_clip}"
     if not await storage.async_file_exists(s3_key):
         raise HTTPException(status_code=404, detail="Baseline audio file not found")
-    return machine, s3_key
+    return s3_key, sound_clip
 
 
 @router.get("", response_model=list[AlertResponse])
@@ -240,8 +244,8 @@ async def get_baseline_spectrogram(
     alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
-    machine, s3_key = await _get_baseline_audio_key_or_404(session, alert_id)
-    clip_name = Path(machine.baseline_sound_clip).stem
+    s3_key, sound_clip = await _get_baseline_audio_key_or_404(session, alert_id)
+    clip_name = Path(sound_clip).stem
     spec_key = f"spectrograms/baseline_{clip_name}.png"
     if not await storage.async_file_exists(spec_key):
         tmp_wav = await storage.async_download_to_tempfile(s3_key)
