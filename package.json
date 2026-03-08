@@ -27,6 +27,7 @@
     "dev:server": "bun run env:run turbo -F server dev",
     "dev:web": "bun run env:run turbo -F web dev",
     "db:migrate": "bun run env:run bun run -F server db:migrate",
+    "migrate": "bun run env:run bun run -F server db:migrate",
     "seed": "bun run env:run bun run -F server seed",
     "seed:dev": "bun run env:run bun run -F server seed:dev",
     "deploy": "bun run env:run turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
