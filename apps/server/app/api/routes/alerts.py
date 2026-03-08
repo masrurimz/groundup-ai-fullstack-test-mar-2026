@@ -1,6 +1,4 @@
 from datetime import UTC, date, datetime, time
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -10,7 +8,7 @@ from app.core.config import settings
 from app.core.db import get_session
 from app.models import Alert
 from app.schemas import AlertResponse, AlertUpdateRequest, WaveformResponse
-from app.services.media import generate_spectrogram, generate_waveform
+from app.services.media import ensure_spectrogram, generate_waveform_cached
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -31,7 +29,7 @@ async def list_alerts(
     end_date: date | None = None,
     session: AsyncSession = Depends(get_session),
 ) -> list[Alert]:
-    query = select(Alert).order_by(Alert.id)
+    query = select(Alert).order_by(Alert.timestamp.desc(), Alert.id.desc())
 
     if machine is not None:
         query = query.where(Alert.machine == machine)
@@ -102,7 +100,7 @@ async def get_waveform(
     if not audio_path.exists():
         raise HTTPException(status_code=404, detail="Audio file not found")
 
-    waveform = generate_waveform(audio_path)
+    waveform = generate_waveform_cached(audio_path)
     return WaveformResponse(alert_id=alert_id, **waveform)
 
 
@@ -118,7 +116,7 @@ async def get_spectrogram(
         audio_path = settings.AUDIO_DIR / alert.sound_clip
         if not audio_path.exists():
             raise HTTPException(status_code=404, detail="Audio file not found")
-        generate_spectrogram(Path(audio_path), Path(spectrogram_path))
+        ensure_spectrogram(audio_path, spectrogram_path)
 
     return FileResponse(
         path=str(spectrogram_path),
