@@ -166,7 +166,13 @@ async def get_waveform(
         raise HTTPException(status_code=404, detail="Audio file not found")
 
     waveform = generate_waveform(audio_path)
-    return WaveformResponse(alert_id=alert_id, **waveform)
+    return WaveformResponse(
+        alert_id=alert_id,
+        sample_rate=waveform["sample_rate"],
+        duration_seconds=waveform["duration_seconds"],
+        times=waveform["times"],
+        amplitudes=waveform["amplitudes"],
+    )
 
 
 @router.get("/{alert_id}/spectrogram")

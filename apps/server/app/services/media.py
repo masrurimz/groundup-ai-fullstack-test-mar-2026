@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TypedDict
 
 import librosa
 import librosa.display
@@ -12,6 +13,13 @@ FMAX_HZ = 8000
 N_MELS = 128
 HOP_LENGTH = 512
 N_FFT = 2048
+
+
+class WaveformData(TypedDict):
+    sample_rate: int
+    duration_seconds: float
+    times: list[float]
+    amplitudes: list[float]
 
 
 def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
@@ -49,9 +57,7 @@ def generate_spectrogram(wav_path: Path, output_path: Path) -> Path:
     return output_path
 
 
-def generate_waveform(
-    wav_path: Path, max_points: int = 2048
-) -> dict[str, float | int | list[float]]:
+def generate_waveform(wav_path: Path, max_points: int = 2048) -> WaveformData:
     y, sr = librosa.load(str(wav_path), sr=None, mono=True)
 
     sample_step = max(1, len(y) // max_points)
