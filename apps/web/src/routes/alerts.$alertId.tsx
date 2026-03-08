@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import ReactH5AudioPlayer from "react-h5-audio-player";
+import "react-h5-audio-player/lib/styles.css";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Loader2, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Activity, AudioLines, Loader2 } from "lucide-react";
 
 import {
   fetchWaveform,
@@ -309,105 +311,56 @@ function BaselinePlaceholderPanel() {
 // ---------------------------------------------------------------------------
 
 function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; duration?: number }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const src = getAlertAudioUrl(alertId);
+  const [audioError, setAudioError] = useState(false);
+  const durationLabel = formatTime(apiDuration ?? 0);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onLoaded = () => {
-      setDuration(audio.duration);
-      setIsReady(true);
-    };
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onEnded = () => setIsPlaying(false);
-    const onError = () => setIsReady(false);
-
-    audio.addEventListener("loadedmetadata", onLoaded);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-
-    return () => {
-      audio.removeEventListener("loadedmetadata", onLoaded);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-    };
-  }, []);
-
-  const togglePlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      void audio.play();
-    }
-    setIsPlaying(!isPlaying);
-  }, [isPlaying]);
-
-  const toggleMute = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.muted = !isMuted;
-    setIsMuted(!isMuted);
-  }, [isMuted]);
-
-  const seek = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const audio = audioRef.current;
-      if (!audio || !duration) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      audio.currentTime = ratio * duration;
-    },
-    [duration],
-  );
-
-  const displayDuration = duration || apiDuration || 0;
-  const progress = displayDuration > 0 ? (currentTime / displayDuration) * 100 : 0;
+    setAudioError(false);
+  }, [src]);
 
   return (
-    <div className="inline-flex w-fit items-center gap-3 rounded-lg bg-muted p-2">
-      <audio ref={audioRef} src={getAlertAudioUrl(alertId)} preload="metadata" />
+    <div className="space-y-3 rounded-xl border border-border bg-card/95 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <AudioLines className="h-4 w-4 text-primary" />
+          Alert Audio Stream
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-primary">
+            Duration {durationLabel}
+          </span>
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-emerald-700 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1">
+              <Activity className="h-3 w-3" />
+              Streaming
+            </span>
+          </span>
+        </div>
+      </div>
 
-      <button
-        type="button"
-        className="text-foreground transition-colors hover:text-foreground/80 disabled:opacity-40"
-        onClick={togglePlay}
-        disabled={!isReady}
-      >
-        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-      </button>
-
-      <span className="min-w-[72px] font-mono text-[11px] text-muted-foreground">
-        {formatTime(currentTime)} / {formatTime(displayDuration)}
-      </span>
-
-      <div
-        className="relative h-1.5 w-28 cursor-pointer overflow-hidden rounded-full bg-border"
-        onClick={seek}
-      >
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-foreground transition-[width] duration-100"
-          style={{ width: `${progress}%` }}
+      <div className="rounded-lg border border-border bg-muted/30 px-1 py-1.5 sm:px-2 [&_.rhap_container]:bg-transparent [&_.rhap_container]:p-0 [&_.rhap_container]:shadow-none [&_.rhap_controls-section]:mt-3 [&_.rhap_controls-section]:justify-end [&_.rhap_controls-section]:sm:mt-0 [&_.rhap_controls-section]:sm:justify-start [&_.rhap_main]:gap-3 [&_.rhap_main]:sm:items-center [&_.rhap_main]:sm:gap-4 [&_.rhap_main-controls-button]:text-foreground [&_.rhap_main-controls-button]:transition-colors [&_.rhap_main-controls-button:hover]:text-primary [&_.rhap_play-pause-button]:h-11 [&_.rhap_play-pause-button]:w-11 [&_.rhap_play-pause-button]:rounded-full [&_.rhap_play-pause-button]:bg-primary/10 [&_.rhap_play-pause-button]:text-primary [&_.rhap_progress-filled]:bg-primary [&_.rhap_progress-indicator]:bg-primary [&_.rhap_progress-indicator]:shadow-none [&_.rhap_progress-indicator]:ring-2 [&_.rhap_progress-indicator]:ring-primary/20 [&_.rhap_progress-section]:mx-0 [&_.rhap_progress-section]:grow [&_.rhap_progress-section]:gap-2 [&_.rhap_time]:text-xs [&_.rhap_time]:font-medium [&_.rhap_time]:text-muted-foreground [&_.rhap_volume-button]:text-foreground [&_.rhap_volume-controls]:justify-end [&_.rhap_volume-container]:w-24 [&_.rhap_volume-filled]:bg-primary [&_.rhap_volume-indicator]:bg-primary">
+        <ReactH5AudioPlayer
+          src={src}
+          preload="metadata"
+          autoPlayAfterSrcChange={false}
+          showJumpControls={false}
+          progressJumpSteps={{ backward: 0, forward: 0 }}
+          onError={() => setAudioError(true)}
+          customAdditionalControls={[]}
+          customVolumeControls={["VOLUME"]}
         />
       </div>
 
-      <button
-        type="button"
-        className="text-muted-foreground transition-colors hover:text-foreground"
-        onClick={toggleMute}
-      >
-        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
+      {audioError ? (
+        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+          Unable to load audio stream right now. Expected clip length: {durationLabel}.
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Use the timeline to seek; playback supports byte-range streaming.
+        </p>
+      )}
     </div>
   );
 }
