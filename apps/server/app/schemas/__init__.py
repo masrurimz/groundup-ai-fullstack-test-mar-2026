@@ -9,6 +9,9 @@ from .lookup import (
     ReasonCreateRequest,
     ReasonResponse,
     ReasonUpdateRequest,
+    SensorCreateRequest,
+    SensorResponse,
+    SensorUpdateRequest,
 )
 
 __all__ = [
@@ -24,5 +27,8 @@ __all__ = [
     "ReasonCreateRequest",
     "ReasonResponse",
     "ReasonUpdateRequest",
+    "SensorCreateRequest",
+    "SensorResponse",
+    "SensorUpdateRequest",
     "WaveformResponse",
 ]

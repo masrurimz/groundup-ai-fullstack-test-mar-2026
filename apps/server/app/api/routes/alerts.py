@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, date, datetime, time
 from pathlib import Path
 
@@ -56,7 +57,7 @@ async def _iter_audio_bytes(path: Path, start: int, end: int):
             yield chunk
 
 
-async def _get_alert_or_404(session: AsyncSession, alert_id: int) -> Alert:
+async def _get_alert_or_404(session: AsyncSession, alert_id: uuid.UUID) -> Alert:
     result = await session.execute(select(Alert).where(Alert.id == alert_id))
     alert = result.scalar_one_or_none()
     if alert is None:
@@ -91,7 +92,7 @@ async def list_alerts(
 
 @router.get("/{alert_id}", response_model=AlertResponse)
 async def get_alert(
-    alert_id: int,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> Alert:
     return await _get_alert_or_404(session, alert_id)
@@ -99,16 +100,18 @@ async def get_alert(
 
 @router.patch("/{alert_id}", response_model=AlertResponse)
 async def update_alert(
-    alert_id: int,
+    alert_id: uuid.UUID,
     body: AlertUpdateRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Alert:
     alert = await _get_alert_or_404(session, alert_id)
 
     before = {
-        "suspected_reason_id": alert.suspected_reason_id,
+        "suspected_reason_id": str(alert.suspected_reason_id)
+        if alert.suspected_reason_id
+        else None,
         "suspected_reason": alert.suspected_reason,
-        "action_id": alert.action_id,
+        "action_id": str(alert.action_id) if alert.action_id else None,
         "action": alert.action,
         "comment": alert.comment,
     }
@@ -162,9 +165,11 @@ async def update_alert(
             actor="admin-ui",
             before_json=before,
             after_json={
-                "suspected_reason_id": alert.suspected_reason_id,
+                "suspected_reason_id": str(alert.suspected_reason_id)
+                if alert.suspected_reason_id
+                else None,
                 "suspected_reason": alert.suspected_reason,
-                "action_id": alert.action_id,
+                "action_id": str(alert.action_id) if alert.action_id else None,
                 "action": alert.action,
                 "comment": alert.comment,
             },
@@ -179,7 +184,7 @@ async def update_alert(
 
 @router.get("/{alert_id}/audio")
 async def get_audio(
-    alert_id: int,
+    alert_id: uuid.UUID,
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
@@ -219,7 +224,7 @@ async def get_audio(
 
 @router.get("/{alert_id}/waveform", response_model=WaveformResponse)
 async def get_waveform(
-    alert_id: int,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> WaveformResponse:
     alert = await _get_alert_or_404(session, alert_id)
@@ -234,7 +239,7 @@ async def get_waveform(
 
 @router.get("/{alert_id}/spectrogram")
 async def get_spectrogram(
-    alert_id: int,
+    alert_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ) -> FileResponse:
     alert = await _get_alert_or_404(session, alert_id)
