@@ -8,7 +8,6 @@ export function getApiClient() {
   if (!configured) {
     client.setConfig({
       baseUrl: env.VITE_SERVER_URL,
-      responseStyle: "data",
       throwOnError: true,
     });
     configured = true;

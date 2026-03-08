@@ -32,6 +32,7 @@ export interface AlertsQuery {
 export async function fetchAlerts(query?: AlertsQuery): Promise<Alert[]> {
   const { data } = await listAlertsApiV1AlertsGet({
     client: getApiClient(),
+    throwOnError: true,
     query,
   });
 
@@ -45,9 +46,10 @@ export async function fetchAlert(id: string): Promise<Alert> {
   const alertId = Number(id);
   const { data } = await getAlertApiV1AlertsAlertIdGet({
     client: getApiClient(),
+    throwOnError: true,
     path: { alert_id: alertId },
   });
-  return data!;
+  return data;
 }
 
 /**
@@ -57,10 +59,11 @@ export async function updateAlert(id: string, payload: AlertUpdateRequest): Prom
   const alertId = Number(id);
   const { data } = await updateAlertApiV1AlertsAlertIdPatch({
     client: getApiClient(),
+    throwOnError: true,
     path: { alert_id: alertId },
     body: payload,
   });
-  return data!;
+  return data;
 }
 
 /**
@@ -70,9 +73,10 @@ export async function fetchWaveform(id: string): Promise<WaveformResponse> {
   const alertId = Number(id);
   const { data } = await getWaveformApiV1AlertsAlertIdWaveformGet({
     client: getApiClient(),
+    throwOnError: true,
     path: { alert_id: alertId },
   });
-  return data!;
+  return data;
 }
 
 /**
