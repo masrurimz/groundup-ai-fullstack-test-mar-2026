@@ -1,0 +1,15 @@
+.git
+.gitignore
+.beads
+.venv
+node_modules
+.turbo
+.ruff_cache
+**/.pytest_cache
+**/__pycache__
+**/.DS_Store
+*.log
+*.sqlite
+*.db
+apps/server/.env
+apps/server/groundup.db
