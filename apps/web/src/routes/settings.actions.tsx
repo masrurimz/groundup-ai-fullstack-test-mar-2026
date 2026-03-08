@@ -1,12 +1,32 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, PlusCircle } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Loader2, PlusCircle, Wrench } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { z } from "zod";
 
-import { createFileRoute } from "@tanstack/react-router";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,13 +58,20 @@ function ActionsPage() {
   const query = useQuery(actionsQueryOptions(true));
   const createMutation = useCreateActionMutation();
   const updateMutation = useUpdateActionMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: { action: "" },
     validators: { onSubmit: createSchema },
     onSubmit: async ({ value, formApi }) => {
-      await createMutation.mutateAsync({ action: value.action.trim() });
-      formApi.reset();
+      try {
+        await createMutation.mutateAsync({ action: value.action.trim() });
+        toast.success("Action added");
+        formApi.reset();
+        setDialogOpen(false);
+      } catch {
+        toast.error("Failed to add action. Try again.");
+      }
     },
   });
 
@@ -52,69 +79,72 @@ function ActionsPage() {
 
   return (
     <div className="px-8 py-8">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-800">Actions</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Global response actions that operators can assign to alerts.
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-800">Actions</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Global response actions that operators can assign to alerts.
+          </p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger render={<Button className="gap-1.5" />}>
+            <PlusCircle className="h-4 w-4" /> Add Action
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Action</DialogTitle>
+              <DialogDescription>Enter the label for the new action.</DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void form.handleSubmit();
+              }}
+              className="space-y-4 pt-2"
+            >
+              <form.Field name="action">
+                {(field) => (
+                  <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+                    <FieldLabel htmlFor={field.name}>Action label</FieldLabel>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      placeholder="Action label"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      disabled={form.state.isSubmitting}
+                      aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+                    />
+                    <FieldError
+                      errors={field.state.meta.errors.map((e) =>
+                        typeof e === "string" ? { message: e } : (e as { message?: string }),
+                      )}
+                    />
+                  </Field>
+                )}
+              </form.Field>
+              <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+                {([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    disabled={!canSubmit || isSubmitting}
+                    className="w-full gap-1.5"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-4 w-4" />
+                    )}
+                    Add Action
+                  </Button>
+                )}
+              </form.Subscribe>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Create form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void form.handleSubmit();
-        }}
-        className="mb-8 flex items-end gap-3"
-      >
-        <form.Field name="action">
-          {(field) => (
-            <Field
-              className="w-72"
-              data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            >
-              <FieldLabel htmlFor={field.name}>Action label</FieldLabel>
-              <Input
-                id={field.name}
-                name={field.name}
-                placeholder="Action label"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                disabled={form.state.isSubmitting}
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              />
-              <FieldError
-                errors={field.state.meta.errors.map((e) =>
-                  typeof e === "string" ? { message: e } : (e as { message?: string }),
-                )}
-              />
-            </Field>
-          )}
-        </form.Field>
-
-        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Button type="submit" disabled={!canSubmit || isSubmitting} className="gap-1.5">
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <PlusCircle className="h-4 w-4" />
-              )}
-              Add Action
-            </Button>
-          )}
-        </form.Subscribe>
-
-        {createMutation.isError ? (
-          <p className="self-center text-sm text-red-500">Failed to add. Try again.</p>
-        ) : null}
-        {createMutation.isSuccess ? (
-          <p className="self-center text-sm text-emerald-600">Action added.</p>
-        ) : null}
-      </form>
-
-      {/* Table */}
       {query.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
@@ -122,7 +152,18 @@ function ActionsPage() {
       ) : query.isError ? (
         <p className="text-sm text-red-500">Failed to load actions.</p>
       ) : actions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No actions yet. Add one above.</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border py-16 text-center">
+          <div className="mb-4 rounded-full bg-muted p-3">
+            <Wrench className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-sm font-semibold">No actions yet</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Get started by adding your first action.
+          </p>
+          <Button className="mt-4 gap-1.5" onClick={() => setDialogOpen(true)}>
+            <PlusCircle className="h-4 w-4" /> Add Action
+          </Button>
+        </div>
       ) : (
         <Table>
           <TableHeader>
@@ -134,34 +175,75 @@ function ActionsPage() {
           </TableHeader>
           <TableBody>
             {actions.map((action) => (
-              <TableRow key={action.id} className={action.is_active ? "" : "opacity-50"}>
-                <TableCell className="font-medium">{action.action}</TableCell>
-                <TableCell>
-                  <Badge variant={action.is_active ? "default" : "secondary"}>
-                    {action.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      updateMutation.mutate({
-                        action_id: action.id,
-                        body: { is_active: !action.is_active },
-                      })
-                    }
-                    disabled={updateMutation.isPending}
-                    className="text-xs"
-                  >
-                    {action.is_active ? "Deactivate" : "Reactivate"}
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <ActionRow
+                key={action.id}
+                action={action}
+                onToggle={() =>
+                  updateMutation.mutate({
+                    action_id: action.id,
+                    body: { is_active: !action.is_active },
+                  })
+                }
+                isPending={updateMutation.isPending}
+              />
             ))}
           </TableBody>
         </Table>
       )}
     </div>
+  );
+}
+
+function ActionRow({
+  action,
+  onToggle,
+  isPending,
+}: {
+  action: { id: string; action: string; is_active: boolean };
+  onToggle: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <TableRow className={action.is_active ? "" : "opacity-50"}>
+      <TableCell className="font-medium">{action.action}</TableCell>
+      <TableCell>
+        <Badge variant={action.is_active ? "default" : "secondary"}>
+          {action.is_active ? "Active" : "Inactive"}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        {action.is_active ? (
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={<Button variant="ghost" size="sm" disabled={isPending} className="text-xs" />}
+            >
+              Deactivate
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Deactivate action?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action will be marked inactive and hidden from active selection.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onToggle}>Deactivate</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggle}
+            disabled={isPending}
+            className="text-xs"
+          >
+            Reactivate
+          </Button>
+        )}
+      </TableCell>
+    </TableRow>
   );
 }

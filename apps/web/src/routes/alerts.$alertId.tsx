@@ -3,14 +3,12 @@ import { z } from "zod";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import ReactH5AudioPlayer, { RHAP_UI } from "react-h5-audio-player";
-import "react-h5-audio-player/lib/styles.css";
+import { useMemo, useState } from "react";
 import { LineChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
@@ -22,7 +20,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Activity, AudioLines, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { AudioPlayer } from "@/components/audio/audio-player";
+import { toast } from "sonner";
 import {
   getBaselineWaveformApiV1AlertsAlertIdBaselineWaveformGetOptions,
   getWaveformApiV1AlertsAlertIdWaveformGetOptions,
@@ -135,7 +135,11 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
   return (
     <div className="min-w-0 overflow-hidden">
       <h3 className="mb-6 text-lg font-medium text-foreground">Anomaly Machine Output</h3>
-      <AudioPlayer alertId={alertId} duration={waveformQuery.data?.duration_seconds} />
+      <AudioPlayer
+        src={getAlertAudioUrl(alertId)}
+        duration={waveformQuery.data?.duration_seconds}
+        variant="anomaly"
+      />
       <div className="mt-6 space-y-6">
         <WaveformChart
           waveform={waveformQuery.data ?? null}
@@ -147,7 +151,6 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
     </div>
   );
 }
-
 // ---------------------------------------------------------------------------
 // Baseline Panel – mirrors AnomalyPanel with machine-level baseline audio
 // ---------------------------------------------------------------------------
@@ -179,7 +182,11 @@ function BaselinePanel({ alertId }: { alertId: string }) {
   return (
     <div className="min-w-0 overflow-hidden">
       <h3 className="mb-6 text-lg font-medium text-foreground">Normal Machine Output</h3>
-      <BaselineAudioPlayer alertId={alertId} duration={waveformQuery.data?.duration_seconds} />
+      <AudioPlayer
+        src={getAlertBaselineAudioUrl(alertId)}
+        duration={waveformQuery.data?.duration_seconds}
+        variant="baseline"
+      />
       <div className="mt-6 space-y-6">
         <WaveformChart
           waveform={waveformQuery.data ?? null}
@@ -191,79 +198,6 @@ function BaselinePanel({ alertId }: { alertId: string }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Audio Player
-// ---------------------------------------------------------------------------
-
-function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; duration?: number }) {
-  const src = getAlertAudioUrl(alertId);
-  const [audioError, setAudioError] = useState(false);
-  const durationLabel = apiDuration ? formatTime(apiDuration) : null;
-
-  useEffect(() => {
-    setAudioError(false);
-  }, [src]);
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-            <AudioLines className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">Audio Stream</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {durationLabel ? (
-            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-              {durationLabel}
-            </span>
-          ) : null}
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-            <Activity className="h-2.5 w-2.5" />
-            Live
-          </span>
-        </div>
-      </div>
-
-      {/* Player body */}
-      <div className="px-4 py-4 [&_.rhap_container]:bg-transparent [&_.rhap_container]:p-0 [&_.rhap_container]:shadow-none [&_.rhap_horizontal]:items-center [&_.rhap_horizontal_.rhap_controls-section]:ml-3 [&_.rhap_main-controls]:flex [&_.rhap_main-controls]:items-center [&_.rhap_main-controls]:justify-center [&_.rhap_play-pause-button]:flex [&_.rhap_play-pause-button]:h-9 [&_.rhap_play-pause-button]:w-9 [&_.rhap_play-pause-button]:items-center [&_.rhap_play-pause-button]:justify-center [&_.rhap_play-pause-button]:rounded-full [&_.rhap_play-pause-button]:bg-primary [&_.rhap_play-pause-button]:text-[20px] [&_.rhap_play-pause-button]:text-primary-foreground [&_.rhap_play-pause-button]:transition-opacity [&_.rhap_play-pause-button:hover]:opacity-80 [&_.rhap_controls-section]:flex [&_.rhap_controls-section]:items-center [&_.rhap_controls-section]:justify-end [&_.rhap_progress-section]:flex [&_.rhap_progress-section]:items-center [&_.rhap_progress-section]:gap-2 [&_.rhap_progress-container]:flex-1 [&_.rhap_progress-container]:cursor-pointer [&_.rhap_progress-bar]:h-1.5 [&_.rhap_progress-bar]:rounded-full [&_.rhap_progress-bar-show-download]:bg-muted [&_.rhap_download-progress]:rounded-full [&_.rhap_download-progress]:bg-border [&_.rhap_progress-filled]:rounded-full [&_.rhap_progress-filled]:bg-primary [&_.rhap_progress-indicator]:!h-3.5 [&_.rhap_progress-indicator]:!w-3.5 [&_.rhap_progress-indicator]:!-top-1 [&_.rhap_progress-indicator]:!ml-[-7px] [&_.rhap_progress-indicator]:rounded-full [&_.rhap_progress-indicator]:bg-primary [&_.rhap_progress-indicator]:shadow [&_.rhap_progress-indicator]:ring-[3px] [&_.rhap_progress-indicator]:ring-primary/25 [&_.rhap_time]:text-[11px] [&_.rhap_time]:tabular-nums [&_.rhap_time]:text-muted-foreground [&_.rhap_volume-controls]:flex [&_.rhap_volume-controls]:items-center [&_.rhap_volume-controls]:gap-1 [&_.rhap_volume-button]:flex [&_.rhap_volume-button]:h-7 [&_.rhap_volume-button]:w-7 [&_.rhap_volume-button]:items-center [&_.rhap_volume-button]:justify-center [&_.rhap_volume-button]:rounded-md [&_.rhap_volume-button]:text-[16px] [&_.rhap_volume-button]:text-muted-foreground [&_.rhap_volume-button]:transition-colors [&_.rhap_volume-button:hover]:bg-muted [&_.rhap_volume-button:hover]:text-foreground [&_.rhap_volume-container]:w-20 [&_.rhap_volume-bar-area]:h-3 [&_.rhap_volume-bar]:h-1 [&_.rhap_volume-bar]:rounded-full [&_.rhap_volume-bar]:bg-muted [&_.rhap_volume-filled]:rounded-full [&_.rhap_volume-filled]:bg-primary [&_.rhap_volume-indicator]:!h-2.5 [&_.rhap_volume-indicator]:!w-2.5 [&_.rhap_volume-indicator]:!-top-[3px] [&_.rhap_volume-indicator]:!ml-[-5px] [&_.rhap_volume-indicator]:rounded-full [&_.rhap_volume-indicator]:bg-primary [&_.rhap_volume-indicator]:shadow-sm [&_.rhap_additional-controls]:hidden">
-        <ReactH5AudioPlayer
-          src={src}
-          layout="horizontal"
-          preload="metadata"
-          autoPlayAfterSrcChange={false}
-          showJumpControls={false}
-          progressJumpSteps={{ backward: 0, forward: 0 }}
-          onError={() => setAudioError(true)}
-          customAdditionalControls={[]}
-          customVolumeControls={[RHAP_UI.VOLUME]}
-        />
-      </div>
-
-      {/* Footer status */}
-      {audioError ? (
-        <div className="border-t border-border bg-amber-50/60 px-4 py-2 dark:bg-amber-950/30">
-          <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-            Unable to load audio stream{durationLabel ? ` · expected ${durationLabel}` : ""}.
-          </p>
-        </div>
-      ) : (
-        <div className="border-t border-border px-4 py-2">
-          <p className="text-[11px] text-muted-foreground">
-            Seek anywhere · byte-range streaming enabled
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Waveform Chart – shadcn/recharts
-// ---------------------------------------------------------------------------
 
 const WAVEFORM_MIN_SPAN = 0.2;
 const WAVEFORM_PADDING_FACTOR = 0.08;
@@ -278,7 +212,7 @@ const chartConfig = {
     label: "Amplitude",
     color: "var(--chart-2)",
   },
-} satisfies ChartConfig;
+};
 
 function getWaveformBounds(amplitudes: number[]): WaveformBounds {
   const minAmp = Math.min(...amplitudes);
@@ -469,81 +403,6 @@ function SpectrogramImage({ alertId }: { alertId: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Baseline Audio Player – same UI as AudioPlayer but uses baseline audio URL
-// ---------------------------------------------------------------------------
-
-function BaselineAudioPlayer({
-  alertId,
-  duration: apiDuration,
-}: {
-  alertId: string;
-  duration?: number;
-}) {
-  const src = getAlertBaselineAudioUrl(alertId);
-  const [audioError, setAudioError] = useState(false);
-  const durationLabel = apiDuration ? formatTime(apiDuration) : null;
-
-  useEffect(() => {
-    setAudioError(false);
-  }, [src]);
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-            <AudioLines className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">Audio Stream</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {durationLabel ? (
-            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-              {durationLabel}
-            </span>
-          ) : null}
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400">
-            <Activity className="h-2.5 w-2.5" />
-            Baseline
-          </span>
-        </div>
-      </div>
-
-      {/* Player body */}
-      <div className="px-4 py-4 [&_.rhap_container]:bg-transparent [&_.rhap_container]:p-0 [&_.rhap_container]:shadow-none [&_.rhap_horizontal]:items-center [&_.rhap_horizontal_.rhap_controls-section]:ml-3 [&_.rhap_main-controls]:flex [&_.rhap_main-controls]:items-center [&_.rhap_main-controls]:justify-center [&_.rhap_play-pause-button]:flex [&_.rhap_play-pause-button]:h-9 [&_.rhap_play-pause-button]:w-9 [&_.rhap_play-pause-button]:items-center [&_.rhap_play-pause-button]:justify-center [&_.rhap_play-pause-button]:rounded-full [&_.rhap_play-pause-button]:bg-primary [&_.rhap_play-pause-button]:text-[20px] [&_.rhap_play-pause-button]:text-primary-foreground [&_.rhap_play-pause-button]:transition-opacity [&_.rhap_play-pause-button:hover]:opacity-80 [&_.rhap_controls-section]:flex [&_.rhap_controls-section]:items-center [&_.rhap_controls-section]:justify-end [&_.rhap_progress-section]:flex [&_.rhap_progress-section]:items-center [&_.rhap_progress-section]:gap-2 [&_.rhap_progress-container]:flex-1 [&_.rhap_progress-container]:cursor-pointer [&_.rhap_progress-bar]:h-1.5 [&_.rhap_progress-bar]:rounded-full [&_.rhap_progress-bar-show-download]:bg-muted [&_.rhap_download-progress]:rounded-full [&_.rhap_download-progress]:bg-border [&_.rhap_progress-filled]:rounded-full [&_.rhap_progress-filled]:bg-primary [&_.rhap_progress-indicator]:!h-3.5 [&_.rhap_progress-indicator]:!w-3.5 [&_.rhap_progress-indicator]:!-top-1 [&_.rhap_progress-indicator]:!ml-[-7px] [&_.rhap_progress-indicator]:rounded-full [&_.rhap_progress-indicator]:bg-primary [&_.rhap_progress-indicator]:shadow [&_.rhap_progress-indicator]:ring-[3px] [&_.rhap_progress-indicator]:ring-primary/25 [&_.rhap_time]:text-[11px] [&_.rhap_time]:tabular-nums [&_.rhap_time]:text-muted-foreground [&_.rhap_volume-controls]:flex [&_.rhap_volume-controls]:items-center [&_.rhap_volume-controls]:gap-1 [&_.rhap_volume-button]:flex [&_.rhap_volume-button]:h-7 [&_.rhap_volume-button]:w-7 [&_.rhap_volume-button]:items-center [&_.rhap_volume-button]:justify-center [&_.rhap_volume-button]:rounded-md [&_.rhap_volume-button]:text-[16px] [&_.rhap_volume-button]:text-muted-foreground [&_.rhap_volume-button]:transition-colors [&_.rhap_volume-button:hover]:bg-muted [&_.rhap_volume-button:hover]:text-foreground [&_.rhap_volume-container]:w-20 [&_.rhap_volume-bar-area]:h-3 [&_.rhap_volume-bar]:h-1 [&_.rhap_volume-bar]:rounded-full [&_.rhap_volume-bar]:bg-muted [&_.rhap_volume-filled]:rounded-full [&_.rhap_volume-filled]:bg-primary [&_.rhap_volume-indicator]:!h-2.5 [&_.rhap_volume-indicator]:!w-2.5 [&_.rhap_volume-indicator]:!-top-[3px] [&_.rhap_volume-indicator]:!ml-[-5px] [&_.rhap_volume-indicator]:rounded-full [&_.rhap_volume-indicator]:bg-primary [&_.rhap_volume-indicator]:shadow-sm [&_.rhap_additional-controls]:hidden">
-        <ReactH5AudioPlayer
-          src={src}
-          layout="horizontal"
-          preload="metadata"
-          autoPlayAfterSrcChange={false}
-          showJumpControls={false}
-          progressJumpSteps={{ backward: 0, forward: 0 }}
-          onError={() => setAudioError(true)}
-          customAdditionalControls={[]}
-          customVolumeControls={[RHAP_UI.VOLUME]}
-        />
-      </div>
-
-      {/* Footer status */}
-      {audioError ? (
-        <div className="border-t border-border bg-amber-50/60 px-4 py-2 dark:bg-amber-950/30">
-          <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-            Unable to load baseline audio{durationLabel ? ` · expected ${durationLabel}` : ""}.{" "}
-          </p>
-        </div>
-      ) : (
-        <div className="border-t border-border px-4 py-2">
-          <p className="text-[11px] text-muted-foreground">
-            Seek anywhere · byte-range streaming enabled
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Baseline Spectrogram Image – uses baseline spectrogram URL
 // ---------------------------------------------------------------------------
 
@@ -663,11 +522,16 @@ function AlertEditFormInner({
       onSubmit: alertSchema,
     },
     onSubmit: async ({ value }) => {
-      await updateMutation.mutateAsync({
-        suspected_reason_id: value.suspected_reason_id || null,
-        action_id: value.action_id || null,
-        comment: value.comment.trim() || null,
-      });
+      try {
+        await updateMutation.mutateAsync({
+          suspected_reason_id: value.suspected_reason_id || null,
+          action_id: value.action_id || null,
+          comment: value.comment.trim() || null,
+        });
+        toast.success("Alert updated");
+      } catch {
+        toast.error("Failed to update alert.");
+      }
     },
   });
 
@@ -768,13 +632,7 @@ function AlertEditFormInner({
         }}
       </form.Field>
 
-      {/* Status */}
-      {updateMutation.isError ? (
-        <p className="text-sm text-red-600">Failed to update alert. Please try again.</p>
-      ) : null}
-      {updateMutation.isSuccess ? (
-        <p className="text-sm text-emerald-700">Alert updated successfully.</p>
-      ) : null}
+      {/* Submit */}
 
       {/* Submit */}
       <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
@@ -798,10 +656,4 @@ function AlertEditFormInner({
 
 function formatDateTime(date: string): string {
   return new Date(date).toLocaleString();
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
