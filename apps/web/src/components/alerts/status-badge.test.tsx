@@ -4,14 +4,9 @@ import { render, screen } from "@/test/test-utils";
 import { StatusBadge } from "@/components/alerts/status-badge";
 
 describe("StatusBadge", () => {
-  it("renders 'active' status text", () => {
-    render(<StatusBadge status="active" />);
-    expect(screen.getByText("active")).toBeDefined();
-  });
-
-  it("renders 'acknowledged' status text", () => {
-    render(<StatusBadge status="acknowledged" />);
-    expect(screen.getByText("acknowledged")).toBeDefined();
+  it("renders 'unresolved' status text", () => {
+    render(<StatusBadge status="unresolved" />);
+    expect(screen.getByText("unresolved")).toBeDefined();
   });
 
   it("renders 'resolved' status text", () => {
@@ -26,9 +21,9 @@ describe("StatusBadge", () => {
     expect(screen.getByText("unknown-xyz")).toBeDefined();
   });
 
-  it("is case-insensitive: 'ACTIVE' resolves to the same styling as 'active'", () => {
-    const { container: upper } = render(<StatusBadge status="ACTIVE" />);
-    const { container: lower } = render(<StatusBadge status="active" />);
+  it("is case-insensitive: 'UNRESOLVED' resolves to the same styling as 'unresolved'", () => {
+    const { container: upper } = render(<StatusBadge status="UNRESOLVED" />);
+    const { container: lower } = render(<StatusBadge status="unresolved" />);
     const classUpper = (upper.firstChild as HTMLElement)?.className;
     const classLower = (lower.firstChild as HTMLElement)?.className;
     expect(classUpper).toEqual(classLower);

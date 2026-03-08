@@ -30,7 +30,7 @@ function AlertsLayout() {
   );
 
   const newAlertCount = useMemo(
-    () => filteredAlerts.filter((a) => a.status === "active").length,
+    () => filteredAlerts.filter((a) => a.status === "unresolved").length,
     [filteredAlerts],
   );
 

@@ -48,7 +48,7 @@ const toAlertView = ({ alert }: AlertRow): AlertView => ({
   title: `${alert.machine} ${alert.anomaly_type}`,
   description: `${alert.machine} sensor ${alert.sensor}`,
   severity: mapSeverity(alert.anomaly_type),
-  status: alert.action ? "acknowledged" : "active",
+  status: alert.action !== null && alert.suspected_reason !== null ? "resolved" : "unresolved",
   created_at: alert.timestamp,
   updated_at: alert.timestamp,
   machine: alert.machine,
@@ -92,12 +92,16 @@ export function useAlertsByStatus(status?: AlertView["status"]) {
         .from({ alert: alertsCollection })
         .orderBy(({ alert }) => alert.timestamp, "desc");
 
-      if (status === "active") {
-        return baseQuery.where(({ alert }) => isNull(alert.action)).fn.select(toAlertView);
+      if (status === "unresolved") {
+        return baseQuery
+          .where(({ alert }) => or(isNull(alert.action), isNull(alert.suspected_reason)))
+          .fn.select(toAlertView);
       }
 
-      if (status === "acknowledged") {
-        return baseQuery.where(({ alert }) => not(isNull(alert.action))).fn.select(toAlertView);
+      if (status === "resolved") {
+        return baseQuery
+          .where(({ alert }) => not(or(isNull(alert.action), isNull(alert.suspected_reason))))
+          .fn.select(toAlertView);
       }
 
       return baseQuery.fn.select(toAlertView);

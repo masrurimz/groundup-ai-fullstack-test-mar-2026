@@ -11,7 +11,7 @@ function makeAlert(id: string, overrides: Partial<AlertItem> = {}): AlertItem {
     title: `Alert ${id}`,
     description: "desc",
     severity: "info",
-    status: "active",
+    status: "unresolved",
     created_at: "2024-01-15T10:30:00Z",
     updated_at: "2024-01-15T10:30:00Z",
     machine: "Machine A",

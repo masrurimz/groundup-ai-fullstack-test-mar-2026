@@ -12,7 +12,7 @@ interface AlertListItemProps {
 }
 
 export function AlertListItem({ alert, active, onSelect }: AlertListItemProps) {
-  const isNew = alert.status === "active";
+  const isNew = alert.status === "unresolved";
 
   return (
     <Card

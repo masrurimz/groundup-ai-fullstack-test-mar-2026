@@ -10,7 +10,7 @@ const baseAlert: AlertItem = {
   title: "Test Alert Title",
   description: "Test description",
   severity: "critical",
-  status: "active",
+  status: "unresolved",
   created_at: "2024-01-15T10:30:00Z",
   updated_at: "2024-01-15T10:30:00Z",
   machine: "Machine A",
@@ -66,20 +66,20 @@ describe("AlertListItem", () => {
     expect(card?.className).toContain("hover:border-gray-300");
   });
 
-  it("status='active' shows a filled blue dot indicator", () => {
+  it("status='unresolved' shows a filled blue dot indicator", () => {
     const { container } = render(
       <AlertListItem
-        alert={{ ...baseAlert, status: "active" }}
+        alert={{ ...baseAlert, status: "unresolved" }}
         active={false}
         onSelect={vi.fn()}
       />,
     );
-    // The dot span gets bg-blue-500 only when status is active
+    // The dot span gets bg-blue-500 only when status is unresolved
     const dot = container.querySelector(".bg-blue-500.rounded-full");
     expect(dot).not.toBeNull();
   });
 
-  it("status != 'active' shows a bordered (unfilled) dot indicator", () => {
+  it("status != 'unresolved' shows a bordered (unfilled) dot indicator", () => {
     const { container } = render(
       <AlertListItem
         alert={{ ...baseAlert, status: "resolved" }}

@@ -39,7 +39,7 @@ export function toAlertView(alert: Alert): AlertView {
     title: `${alert.machine} ${alert.anomaly_type}`,
     description: `${alert.machine} sensor ${alert.sensor}`,
     severity: mapSeverity(alert.anomaly_type),
-    status: alert.action ? "acknowledged" : "active",
+    status: alert.status,
     created_at: alert.timestamp,
     updated_at: alert.timestamp,
     machine: alert.machine,

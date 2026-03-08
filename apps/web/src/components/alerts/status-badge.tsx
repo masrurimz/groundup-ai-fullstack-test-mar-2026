@@ -2,8 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const statusClassMap: Record<string, string> = {
-  active: "bg-severity-success-bg text-severity-success",
-  acknowledged: "bg-severity-info-bg text-severity-info",
+  unresolved: "bg-severity-success-bg text-severity-success",
   resolved: "bg-muted text-muted-foreground",
 };
 
