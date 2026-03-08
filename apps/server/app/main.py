@@ -13,8 +13,9 @@ from app.services import bootstrap_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    async with AsyncSessionLocal() as session:
-        await bootstrap_data(session)
+    if settings.ENVIRONMENT != "production":
+        async with AsyncSessionLocal() as session:
+            await bootstrap_data(session)
     yield
 
 
