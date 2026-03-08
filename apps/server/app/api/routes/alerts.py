@@ -1,12 +1,13 @@
 import asyncio
 import json
 import uuid
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -167,6 +168,20 @@ async def update_alert(
     )
 
     await session.commit()
+
+    # Refresh the CA bucket covering this alert's creation timestamp so
+    # unresolved_count reflects action/reason changes on historical alerts.
+    # Wrapped in try/except: test DB has no TimescaleDB CA.
+    bucket_start = alert.timestamp.replace(minute=0, second=0, microsecond=0)
+    bucket_end = bucket_start + timedelta(hours=1)
+    try:
+        await session.execute(
+            text("CALL refresh_continuous_aggregate('alerts_hourly_stats', :start, :end)"),
+            {"start": bucket_start, "end": bucket_end},
+        )
+    except ProgrammingError:
+        await session.rollback()  # clear aborted transaction state; commit already succeeded
+
     await session.refresh(alert)
     return alert
 
