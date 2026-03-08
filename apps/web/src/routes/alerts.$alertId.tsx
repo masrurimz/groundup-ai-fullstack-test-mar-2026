@@ -278,7 +278,7 @@ function AnomalyPanel({ alertId }: { alertId: string }) {
       <AudioPlayer alertId={alertId} duration={waveform?.duration_seconds} />
       <div className="mt-6 space-y-6 pl-12">
         <WaveformChart waveform={waveform} isLoading={waveformLoading} hasError={waveformError} />
-        <SpectrogramImage alertId={alertId} duration={waveform?.duration_seconds} />
+        <SpectrogramImage alertId={alertId} />
       </div>
     </div>
   );
@@ -379,12 +379,33 @@ function AudioPlayer({ alertId, duration: apiDuration }: { alertId: string; dura
 // Waveform Chart – SVG rendered from real API data
 // ---------------------------------------------------------------------------
 
-const WAVEFORM_Y_MIN = -0.75;
-const WAVEFORM_Y_MAX = 0.75;
 const WAVEFORM_WIDTH = 800;
 const WAVEFORM_HEIGHT = 192;
+const WAVEFORM_LABEL_TICKS = 7;
+const WAVEFORM_MIN_SPAN = 0.2;
+const WAVEFORM_PADDING_FACTOR = 0.08;
 
-function buildWaveformPath(waveform: WaveformResponse): string {
+type WaveformBounds = {
+  min: number;
+  max: number;
+};
+
+function getWaveformBounds(amplitudes: number[]): WaveformBounds {
+  const minAmp = Math.min(...amplitudes);
+  const maxAmp = Math.max(...amplitudes);
+  const span = maxAmp - minAmp;
+  const paddedSpan = Math.max(span, WAVEFORM_MIN_SPAN);
+  const pad = paddedSpan * WAVEFORM_PADDING_FACTOR;
+  const center = (maxAmp + minAmp) / 2;
+  const half = paddedSpan / 2 + pad;
+
+  return {
+    min: center - half,
+    max: center + half,
+  };
+}
+
+function buildWaveformPath(waveform: WaveformResponse, bounds: WaveformBounds): string {
   const { times, amplitudes, duration_seconds } = waveform;
   if (!times.length || !amplitudes.length) return "";
 
@@ -393,14 +414,12 @@ function buildWaveformPath(waveform: WaveformResponse): string {
   // Downsample if too many points
   const maxPoints = WAVEFORM_WIDTH;
   const step = len > maxPoints ? Math.ceil(len / maxPoints) : 1;
+  const yRange = bounds.max - bounds.min;
 
   const x = (t: number) => (t / duration_seconds) * WAVEFORM_WIDTH;
   const y = (a: number) => {
-    const clamped = Math.max(WAVEFORM_Y_MIN, Math.min(WAVEFORM_Y_MAX, a));
-    return (
-      WAVEFORM_HEIGHT -
-      ((clamped - WAVEFORM_Y_MIN) / (WAVEFORM_Y_MAX - WAVEFORM_Y_MIN)) * WAVEFORM_HEIGHT
-    );
+    const clamped = Math.max(bounds.min, Math.min(bounds.max, a));
+    return WAVEFORM_HEIGHT - ((clamped - bounds.min) / yRange) * WAVEFORM_HEIGHT;
   };
 
   const parts: string[] = [];
@@ -412,7 +431,9 @@ function buildWaveformPath(waveform: WaveformResponse): string {
   return parts.join(" ");
 }
 
-const Y_AXIS_LABELS = ["0.75", "0.50", "0.25", "0.00", "-0.25", "-0.50", "-0.75"];
+function formatAmplitudeLabel(value: number): string {
+  return value.toFixed(2);
+}
 
 function WaveformChart({
   waveform,
@@ -423,13 +444,36 @@ function WaveformChart({
   isLoading: boolean;
   hasError: boolean;
 }) {
-  const path = useMemo(() => (waveform ? buildWaveformPath(waveform) : ""), [waveform]);
+  const bounds = useMemo(() => {
+    if (!waveform || waveform.amplitudes.length === 0) {
+      return { min: -1, max: 1 };
+    }
+
+    return getWaveformBounds(waveform.amplitudes);
+  }, [waveform]);
+
+  const path = useMemo(
+    () => (waveform ? buildWaveformPath(waveform, bounds) : ""),
+    [bounds, waveform],
+  );
+
+  const yAxisLabels = useMemo(() => {
+    const step = (bounds.max - bounds.min) / (WAVEFORM_LABEL_TICKS - 1);
+    return Array.from({ length: WAVEFORM_LABEL_TICKS }, (_, index) =>
+      formatAmplitudeLabel(bounds.max - step * index),
+    );
+  }, [bounds]);
+
+  const zeroBaselineY =
+    0 >= bounds.min && 0 <= bounds.max
+      ? WAVEFORM_HEIGHT - ((0 - bounds.min) / (bounds.max - bounds.min)) * WAVEFORM_HEIGHT
+      : null;
 
   return (
     <div className="relative h-48 overflow-visible border-b border-l border-border">
       <div className="absolute -left-12 bottom-0 top-0 flex w-10 flex-col items-end justify-between py-1 text-[10px] font-medium text-muted-foreground">
         <span>AMP</span>
-        {Y_AXIS_LABELS.map((label) => (
+        {yAxisLabels.map((label) => (
           <span key={label}>{label}</span>
         ))}
       </div>
@@ -449,16 +493,18 @@ function WaveformChart({
           className="h-full w-full"
         >
           {/* Zero baseline */}
-          <line
-            x1="0"
-            y1={WAVEFORM_HEIGHT / 2}
-            x2={WAVEFORM_WIDTH}
-            y2={WAVEFORM_HEIGHT / 2}
-            stroke="currentColor"
-            className="text-border"
-            strokeWidth="0.5"
-            strokeDasharray="4 4"
-          />
+          {zeroBaselineY !== null ? (
+            <line
+              x1="0"
+              y1={zeroBaselineY}
+              x2={WAVEFORM_WIDTH}
+              y2={zeroBaselineY}
+              stroke="currentColor"
+              className="text-border"
+              strokeWidth="0.5"
+              strokeDasharray="4 4"
+            />
+          ) : null}
           {/* Waveform path */}
           <path
             d={path}
@@ -477,34 +523,16 @@ function WaveformChart({
 // Spectrogram Image – real PNG from API
 // ---------------------------------------------------------------------------
 
-function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: number }) {
+function SpectrogramImage({ alertId }: { alertId: string }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   const spectrogramUrl = getAlertSpectrogramUrl(alertId);
 
-  // Generate time axis labels from actual duration
-  const timeLabels = useMemo(() => {
-    const dur = duration ?? 54;
-    const count = 10;
-    const step = dur / count;
-    return Array.from({ length: count + 1 }, (_, i) => Math.round(i * step));
-  }, [duration]);
-
   return (
-    <div className="relative border-b border-l border-border">
-      {/* Y-axis labels */}
-      <div className="absolute -left-12 bottom-0 top-0 flex w-10 flex-col items-end justify-between py-1 text-[10px] font-medium text-muted-foreground">
-        <span>8192</span>
-        <span>4096</span>
-        <span>2048</span>
-        <span>1024</span>
-        <span>512</span>
-        <span>0</span>
-      </div>
-
+    <div className="rounded-md border border-border">
       {/* Spectrogram image area */}
-      <div className="relative h-64 overflow-hidden bg-gray-950">
+      <div className="relative h-64 overflow-hidden rounded-md bg-gray-950">
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -527,13 +555,6 @@ function SpectrogramImage({ alertId, duration }: { alertId: string; duration?: n
             onError={() => setImgError(true)}
           />
         )}
-      </div>
-
-      {/* X-axis time labels */}
-      <div className="flex justify-between px-1 pt-1 text-[10px] font-medium text-muted-foreground">
-        {timeLabels.map((t) => (
-          <span key={t}>{t}</span>
-        ))}
       </div>
     </div>
   );
