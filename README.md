@@ -97,6 +97,15 @@ groundup-ai-fullstack-test-mar-2026/
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run check`: Run Oxlint and Oxfmt
 
+## Settings Configuration Flow
+
+- Settings are managed under `/settings` pages in the web app:
+  - `/settings/machines`
+  - `/settings/reasons`
+  - `/settings/actions`
+- Alert detail editing uses ID-based lookup values (machine-scoped reasons + global actions).
+- Additional rollout and QA notes are documented in [`docs/settings-rollout.md`](docs/settings-rollout.md).
+
 ## Tailscale Access
 
 - Backend runs on `0.0.0.0:8000` and frontend on `0.0.0.0:3001` in dev mode.

@@ -15,11 +15,13 @@ N_MELS = 128
 HOP_LENGTH = 512
 N_FFT = 2048
 
+
 class WaveformData(TypedDict):
     sample_rate: int
     duration_seconds: float
     times: list[float]
     amplitudes: list[float]
+
 
 _waveform_cache_lock = Lock()
 _waveform_cache: dict[tuple[str, int, int], WaveformData] = {}

@@ -3,7 +3,17 @@
 import type { Client, Options as Options2, TDataShape } from "./client";
 import { client } from "./client.gen";
 import type {
+  CreateActionApiV1LookupActionsPostData,
+  CreateActionApiV1LookupActionsPostErrors,
+  CreateActionApiV1LookupActionsPostResponses,
+  CreateMachineApiV1LookupMachinesPostData,
+  CreateMachineApiV1LookupMachinesPostErrors,
+  CreateMachineApiV1LookupMachinesPostResponses,
+  CreateReasonApiV1LookupReasonsPostData,
+  CreateReasonApiV1LookupReasonsPostErrors,
+  CreateReasonApiV1LookupReasonsPostResponses,
   GetActionsApiV1LookupActionsGetData,
+  GetActionsApiV1LookupActionsGetErrors,
   GetActionsApiV1LookupActionsGetResponses,
   GetAlertApiV1AlertsAlertIdGetData,
   GetAlertApiV1AlertsAlertIdGetErrors,
@@ -14,6 +24,9 @@ import type {
   GetLookupItemsApiV1LookupGetData,
   GetLookupItemsApiV1LookupGetErrors,
   GetLookupItemsApiV1LookupGetResponses,
+  GetMachinesApiV1LookupMachinesGetData,
+  GetMachinesApiV1LookupMachinesGetErrors,
+  GetMachinesApiV1LookupMachinesGetResponses,
   GetReasonsApiV1LookupReasonsGetData,
   GetReasonsApiV1LookupReasonsGetErrors,
   GetReasonsApiV1LookupReasonsGetResponses,
@@ -30,9 +43,18 @@ import type {
   ListAlertsApiV1AlertsGetData,
   ListAlertsApiV1AlertsGetErrors,
   ListAlertsApiV1AlertsGetResponses,
+  UpdateActionApiV1LookupActionsActionIdPatchData,
+  UpdateActionApiV1LookupActionsActionIdPatchErrors,
+  UpdateActionApiV1LookupActionsActionIdPatchResponses,
   UpdateAlertApiV1AlertsAlertIdPatchData,
   UpdateAlertApiV1AlertsAlertIdPatchErrors,
   UpdateAlertApiV1AlertsAlertIdPatchResponses,
+  UpdateMachineApiV1LookupMachinesMachineIdPatchData,
+  UpdateMachineApiV1LookupMachinesMachineIdPatchErrors,
+  UpdateMachineApiV1LookupMachinesMachineIdPatchResponses,
+  UpdateReasonApiV1LookupReasonsReasonIdPatchData,
+  UpdateReasonApiV1LookupReasonsReasonIdPatchErrors,
+  UpdateReasonApiV1LookupReasonsReasonIdPatchResponses,
 } from "./types.gen";
 
 export type Options<
@@ -146,6 +168,58 @@ export const getLookupItemsApiV1LookupGet = <ThrowOnError extends boolean = fals
   >({ url: "/api/v1/lookup", ...options });
 
 /**
+ * Get Machines
+ */
+export const getMachinesApiV1LookupMachinesGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetMachinesApiV1LookupMachinesGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetMachinesApiV1LookupMachinesGetResponses,
+    GetMachinesApiV1LookupMachinesGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/lookup/machines", ...options });
+
+/**
+ * Create Machine
+ */
+export const createMachineApiV1LookupMachinesPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateMachineApiV1LookupMachinesPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    CreateMachineApiV1LookupMachinesPostResponses,
+    CreateMachineApiV1LookupMachinesPostErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/machines",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update Machine
+ */
+export const updateMachineApiV1LookupMachinesMachineIdPatch = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<UpdateMachineApiV1LookupMachinesMachineIdPatchData, ThrowOnError>,
+) =>
+  (options.client ?? client).patch<
+    UpdateMachineApiV1LookupMachinesMachineIdPatchResponses,
+    UpdateMachineApiV1LookupMachinesMachineIdPatchErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/machines/{machine_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Get Reasons
  */
 export const getReasonsApiV1LookupReasonsGet = <ThrowOnError extends boolean = false>(
@@ -158,14 +232,91 @@ export const getReasonsApiV1LookupReasonsGet = <ThrowOnError extends boolean = f
   >({ url: "/api/v1/lookup/reasons", ...options });
 
 /**
+ * Create Reason
+ */
+export const createReasonApiV1LookupReasonsPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateReasonApiV1LookupReasonsPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    CreateReasonApiV1LookupReasonsPostResponses,
+    CreateReasonApiV1LookupReasonsPostErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/reasons",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update Reason
+ */
+export const updateReasonApiV1LookupReasonsReasonIdPatch = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateReasonApiV1LookupReasonsReasonIdPatchData, ThrowOnError>,
+) =>
+  (options.client ?? client).patch<
+    UpdateReasonApiV1LookupReasonsReasonIdPatchResponses,
+    UpdateReasonApiV1LookupReasonsReasonIdPatchErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/reasons/{reason_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Get Actions
  */
 export const getActionsApiV1LookupActionsGet = <ThrowOnError extends boolean = false>(
   options?: Options<GetActionsApiV1LookupActionsGetData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<GetActionsApiV1LookupActionsGetResponses, unknown, ThrowOnError>({
+  (options?.client ?? client).get<
+    GetActionsApiV1LookupActionsGetResponses,
+    GetActionsApiV1LookupActionsGetErrors,
+    ThrowOnError
+  >({ url: "/api/v1/lookup/actions", ...options });
+
+/**
+ * Create Action
+ */
+export const createActionApiV1LookupActionsPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateActionApiV1LookupActionsPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    CreateActionApiV1LookupActionsPostResponses,
+    CreateActionApiV1LookupActionsPostErrors,
+    ThrowOnError
+  >({
     url: "/api/v1/lookup/actions",
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update Action
+ */
+export const updateActionApiV1LookupActionsActionIdPatch = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateActionApiV1LookupActionsActionIdPatchData, ThrowOnError>,
+) =>
+  (options.client ?? client).patch<
+    UpdateActionApiV1LookupActionsActionIdPatchResponses,
+    UpdateActionApiV1LookupActionsActionIdPatchErrors,
+    ThrowOnError
+  >({
+    url: "/api/v1/lookup/actions/{action_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**

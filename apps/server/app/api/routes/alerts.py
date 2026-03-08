@@ -2,15 +2,14 @@ from datetime import UTC, date, datetime, time
 from pathlib import Path
 
 import aiofiles
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi import Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.models import Alert
+from app.models import Action, Alert, AuditLog, Reason
 from app.schemas import AlertResponse, AlertUpdateRequest, WaveformResponse
 from app.services.media import ensure_spectrogram, generate_waveform_cached
 
@@ -106,9 +105,72 @@ async def update_alert(
 ) -> Alert:
     alert = await _get_alert_or_404(session, alert_id)
 
-    update_data = body.model_dump(include=body.model_fields_set)
-    for field, value in update_data.items():
-        setattr(alert, field, value)
+    before = {
+        "suspected_reason_id": alert.suspected_reason_id,
+        "suspected_reason": alert.suspected_reason,
+        "action_id": alert.action_id,
+        "action": alert.action,
+        "comment": alert.comment,
+    }
+
+    if "suspected_reason_id" in body.model_fields_set:
+        if body.suspected_reason_id is None:
+            alert.suspected_reason_id = None
+            alert.suspected_reason = None
+        else:
+            reason = (
+                await session.execute(select(Reason).where(Reason.id == body.suspected_reason_id))
+            ).scalar_one_or_none()
+            if reason is None:
+                raise HTTPException(status_code=404, detail="reason not found")
+            if not reason.is_active:
+                raise HTTPException(status_code=400, detail="reason is inactive")
+            if alert.machine_id is not None and reason.machine_id != alert.machine_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="reason does not belong to alert machine",
+                )
+            alert.suspected_reason_id = reason.id
+            alert.suspected_reason = reason.reason
+
+    if "action_id" in body.model_fields_set:
+        if body.action_id is None:
+            alert.action_id = None
+            alert.action = None
+        else:
+            action = (
+                await session.execute(select(Action).where(Action.id == body.action_id))
+            ).scalar_one_or_none()
+            if action is None:
+                raise HTTPException(status_code=404, detail="action not found")
+            if not action.is_active:
+                raise HTTPException(status_code=400, detail="action is inactive")
+            alert.action_id = action.id
+            alert.action = action.action
+
+    if "comment" in body.model_fields_set:
+        alert.comment = body.comment
+
+    alert.updated_at = datetime.now(tz=UTC)
+    alert.updated_by = "admin-ui"
+
+    session.add(
+        AuditLog(
+            entity_type="alert",
+            entity_id=alert.id,
+            operation="update",
+            actor="admin-ui",
+            before_json=before,
+            after_json={
+                "suspected_reason_id": alert.suspected_reason_id,
+                "suspected_reason": alert.suspected_reason,
+                "action_id": alert.action_id,
+                "action": alert.action,
+                "comment": alert.comment,
+            },
+            created_at=alert.updated_at,
+        )
+    )
 
     await session.commit()
     await session.refresh(alert)
