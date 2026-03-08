@@ -65,7 +65,7 @@ class Alert(Base):
     serial_number: Mapped[int] = mapped_column(
         Integer, Identity(always=True), nullable=False, insert_sentinel=True
     )
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
     machine: Mapped[str] = mapped_column(String(100))
     machine_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("machines.id"), nullable=True)
     anomaly_type: Mapped[str] = mapped_column(String(100))
