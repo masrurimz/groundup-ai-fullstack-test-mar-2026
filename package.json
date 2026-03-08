@@ -21,7 +21,11 @@
     "generate-client": "bash scripts/generate-client.sh",
     "verify-generated-client": "bash scripts/generate-client.sh && git diff --exit-code -- apps/web/src/lib/api-client",
     "check-types": "turbo check-types",
+    "dev:server": "turbo -F server dev",
     "dev:web": "turbo -F web dev",
+    "db:migrate": "bun run -F server db:migrate",
+    "seed": "bun run -F server seed",
+    "seed:dev": "bun run -F server seed:dev",
     "deploy": "turbo -F @groundup-ai-fullstack-test-mar-2026/infra deploy",
     "destroy": "turbo -F @groundup-ai-fullstack-test-mar-2026/infra destroy",
     "check": "oxlint && oxfmt --write"
