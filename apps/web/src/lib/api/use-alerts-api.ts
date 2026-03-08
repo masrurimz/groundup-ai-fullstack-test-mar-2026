@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { fetchAlerts } from "./alerts";
 import { toAlertViews, type AlertView } from "./alert-view";
+import { queryKeys } from "../query/keys";
 
 const ALERTS_REQUEST_TIMEOUT_MS = 15000;
 
@@ -31,35 +33,20 @@ type UseAlertsApiResult = {
 };
 
 export function useAlertsApi(): UseAlertsApiResult {
-  const [alerts, setAlerts] = useState<AlertView[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
+  const alertsQuery = useQuery({
+    queryKey: queryKeys.alerts,
+    queryFn: () => withTimeout(fetchAlerts(), ALERTS_REQUEST_TIMEOUT_MS),
+  });
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const apiAlerts = await withTimeout(fetchAlerts(), ALERTS_REQUEST_TIMEOUT_MS);
-      setAlerts(toAlertViews(apiAlerts));
-    } catch (unknownError) {
-      setAlerts([]);
-      setError(
-        unknownError instanceof Error ? unknownError : new Error("Failed to load alerts from API"),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.alerts });
+  }, [queryClient]);
 
   return {
-    alerts,
-    isLoading,
-    error,
+    alerts: toAlertViews(alertsQuery.data ?? []),
+    isLoading: alertsQuery.isLoading,
+    error: alertsQuery.error instanceof Error ? alertsQuery.error : null,
     refetch,
   };
 }
