@@ -10,7 +10,6 @@ import {
   getActionsApiV1LookupActionsGet,
   getAlertApiV1AlertsAlertIdGet,
   getAudioApiV1AlertsAlertIdAudioGet,
-  getLookupItemsApiV1LookupGet,
   getMachinesApiV1LookupMachinesGet,
   getReasonsApiV1LookupReasonsGet,
   getSpectrogramApiV1AlertsAlertIdSpectrogramGet,
@@ -42,9 +41,6 @@ import type {
   GetAlertApiV1AlertsAlertIdGetResponse,
   GetAudioApiV1AlertsAlertIdAudioGetData,
   GetAudioApiV1AlertsAlertIdAudioGetError,
-  GetLookupItemsApiV1LookupGetData,
-  GetLookupItemsApiV1LookupGetError,
-  GetLookupItemsApiV1LookupGetResponse,
   GetMachinesApiV1LookupMachinesGetData,
   GetMachinesApiV1LookupMachinesGetError,
   GetMachinesApiV1LookupMachinesGetResponse,
@@ -278,34 +274,6 @@ export const getSpectrogramApiV1AlertsAlertIdSpectrogramGetOptions = (
       return data;
     },
     queryKey: getSpectrogramApiV1AlertsAlertIdSpectrogramGetQueryKey(options),
-  });
-
-export const getLookupItemsApiV1LookupGetQueryKey = (
-  options?: Options<GetLookupItemsApiV1LookupGetData>,
-) => createQueryKey("getLookupItemsApiV1LookupGet", options);
-
-/**
- * Get Lookup Items
- */
-export const getLookupItemsApiV1LookupGetOptions = (
-  options?: Options<GetLookupItemsApiV1LookupGetData>,
-) =>
-  queryOptions<
-    GetLookupItemsApiV1LookupGetResponse,
-    GetLookupItemsApiV1LookupGetError,
-    GetLookupItemsApiV1LookupGetResponse,
-    ReturnType<typeof getLookupItemsApiV1LookupGetQueryKey>
-  >({
-    queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getLookupItemsApiV1LookupGet({
-        ...options,
-        ...queryKey[0],
-        signal,
-        throwOnError: true,
-      });
-      return data;
-    },
-    queryKey: getLookupItemsApiV1LookupGetQueryKey(options),
   });
 
 export const getMachinesApiV1LookupMachinesGetQueryKey = (
