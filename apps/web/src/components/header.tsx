@@ -27,13 +27,13 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button
-          type="button"
+        <Link
+          to="/settings"
           aria-label="Open settings"
-          className="text-gray-400 hover:text-gray-600"
+          className="text-gray-400 hover:text-gray-600 [&.active]:text-primary"
         >
           <Settings className="h-5 w-5" />
-        </button>
+        </Link>
         <button
           type="button"
           aria-label="View profile"
