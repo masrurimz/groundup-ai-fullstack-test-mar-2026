@@ -54,6 +54,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "alchemy": "catalog:",
     "jsdom": "^26.0.0",
+    "msw": "^2.12.10",
     "nitro": "3.0.1-alpha.2",
     "typescript": "catalog:",
     "vite": "^7.0.2",
