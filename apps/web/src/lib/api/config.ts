@@ -4,7 +4,7 @@ import { env } from "@groundup-ai-fullstack-test-mar-2026/env";
  * Unified API configuration
  * All frontend API calls should use this base URL to ensure consistency
  * and facilitate updates when the backend endpoint changes.
- * 
+ *
  * Uses VITE_SERVER_URL from environment (defined in packages/env/src/web.ts)
  */
 export const API_CONFIG = {
