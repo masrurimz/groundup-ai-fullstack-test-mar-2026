@@ -9,6 +9,7 @@ import "react-h5-audio-player/lib/styles.css";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -438,16 +439,8 @@ function SpectrogramImage({ alertId }: { alertId: string }) {
 // ---------------------------------------------------------------------------
 
 const alertSchema = z.object({
-  suspected_reason_id: z
-    .number({ message: "Suspected reason is required" })
-    .int()
-    .nullable()
-    .refine((v) => v !== null, { message: "Suspected reason is required" }),
-  action_id: z
-    .number({ message: "Action is required" })
-    .int()
-    .nullable()
-    .refine((v) => v !== null, { message: "Action is required" }),
+  suspected_reason_id: z.string().min(1, "Suspected reason is required"),
+  action_id: z.string().min(1, "Action is required"),
   comment: z.string().min(1, "Comment is required"),
 });
 
@@ -458,10 +451,24 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
   const actionsQuery = useQuery(actionsQueryOptions());
   const updateMutation = useUpdateAlertMutation(Number(alert.id));
 
+  const reasons = reasonsQuery.data ?? [];
+  const actions = actionsQuery.data ?? [];
+  const lookupsLoading = reasonsQuery.isLoading || actionsQuery.isLoading;
+
+  const reasonItems = useMemo(
+    () => reasons.map((r) => ({ value: String(r.id), label: r.name })),
+    [reasons],
+  );
+  const actionItems = useMemo(
+    () => actions.map((a) => ({ value: String(a.id), label: a.name })),
+    [actions],
+  );
+
   const form = useForm({
     defaultValues: {
-      suspected_reason_id: alert.suspected_reason_id ?? (null as number | null),
-      action_id: alert.action_id ?? (null as number | null),
+      suspected_reason_id:
+        alert.suspected_reason_id != null ? String(alert.suspected_reason_id) : "",
+      action_id: alert.action_id != null ? String(alert.action_id) : "",
       comment: alert.comment ?? "",
     },
     validators: {
@@ -469,179 +476,150 @@ function AlertEditForm({ alert }: { alert: AlertView }) {
     },
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync({
-        suspected_reason_id: value.suspected_reason_id ?? null,
-        action_id: value.action_id ?? null,
+        suspected_reason_id: value.suspected_reason_id ? Number(value.suspected_reason_id) : null,
+        action_id: value.action_id ? Number(value.action_id) : null,
         comment: value.comment.trim() || null,
       });
     },
   });
 
-  const reasons = reasonsQuery.data ?? [];
-  const actions = actionsQuery.data ?? [];
-  const lookupsLoading = reasonsQuery.isLoading || actionsQuery.isLoading;
-
-  const reasonItems = useMemo(
-    () => [
-      { value: null, label: "— None —" },
-      ...reasons.map((r) => ({ value: r.id, label: r.name })),
-    ],
-    [reasons],
-  );
-  const actionItems = useMemo(
-    () => [
-      { value: null, label: "— None —" },
-      ...actions.map((a) => ({ value: a.id, label: a.name })),
-    ],
-    [actions],
-  );
+  useEffect(() => {
+    form.reset({
+      suspected_reason_id:
+        alert.suspected_reason_id != null ? String(alert.suspected_reason_id) : "",
+      action_id: alert.action_id != null ? String(alert.action_id) : "",
+      comment: alert.comment ?? "",
+    });
+  }, [alert.id, alert.suspected_reason_id, alert.action_id, alert.comment, form]);
 
   return (
-    <form.Subscribe selector={(s) => s.isSubmitting}>
-      {(isSubmitting) => (
-        <div className="space-y-8 pb-12">
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Equipment</h4>
-            <p className="mt-1 text-sm text-gray-600">{alert.machine}</p>
-          </div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void form.handleSubmit();
+      }}
+      className="space-y-8 pb-12"
+    >
+      <div>
+        <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Equipment</h4>
+        <p className="mt-1 text-sm text-gray-600">{alert.machine}</p>
+      </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {/* Suspected Reason */}
-            <form.Field name="suspected_reason_id">
-              {(field) => (
-                <div>
-                  <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
-                    Suspected Reason
-                  </label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(v) => {
-                      field.handleChange(v as number | null);
-                      field.handleBlur();
-                    }}
-                    disabled={lookupsLoading || isSubmitting}
-                    items={reasonItems}
-                  >
-                    <SelectTrigger className="w-full rounded-md">
-                      {lookupsLoading ? (
-                        <span className="text-muted-foreground">Loading…</span>
-                      ) : (
-                        <SelectValue placeholder="Select reason" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>— None —</SelectItem>
-                      {reasons.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {field.state.meta.errors[0] ? (
-                    <p className="mt-1 text-xs text-red-600">
-                      {typeof field.state.meta.errors[0] === "string"
-                        ? field.state.meta.errors[0]
-                        : field.state.meta.errors[0].message}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
-
-            {/* Action Required */}
-            <form.Field name="action_id">
-              {(field) => (
-                <div>
-                  <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
-                    Action Required
-                  </label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(v) => {
-                      field.handleChange(v as number | null);
-                      field.handleBlur();
-                    }}
-                    disabled={lookupsLoading || isSubmitting}
-                    items={actionItems}
-                  >
-                    <SelectTrigger className="w-full rounded-md">
-                      {lookupsLoading ? (
-                        <span className="text-muted-foreground">Loading…</span>
-                      ) : (
-                        <SelectValue placeholder="Select action" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>— None —</SelectItem>
-                      {actions.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {field.state.meta.errors[0] ? (
-                    <p className="mt-1 text-xs text-red-600">
-                      {typeof field.state.meta.errors[0] === "string"
-                        ? field.state.meta.errors[0]
-                        : field.state.meta.errors[0].message}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
-          </div>
-
-          {/* Comment */}
-          <form.Field name="comment">
-            {(field) => (
-              <div>
-                <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-foreground">
-                  Comments
-                </label>
-                <Textarea
-                  rows={6}
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        {/* Suspected Reason */}
+        <form.Field name="suspected_reason_id">
+          {(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Suspected Reason</FieldLabel>
+                <Select
+                  name={field.name}
                   value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  disabled={isSubmitting}
-                />
-                {field.state.meta.errors[0] ? (
-                  <p className="mt-1 text-xs text-red-600">
-                    {typeof field.state.meta.errors[0] === "string"
-                      ? field.state.meta.errors[0]
-                      : field.state.meta.errors[0].message}
-                  </p>
-                ) : null}
-              </div>
-            )}
-          </form.Field>
-
-          {/* Status */}
-          {updateMutation.isError ? (
-            <p className="text-sm text-red-600">Failed to update alert. Please try again.</p>
-          ) : null}
-          {updateMutation.isSuccess ? (
-            <p className="text-sm text-emerald-700">Alert updated successfully.</p>
-          ) : null}
-
-          {/* Submit */}
-          <div className="pt-4">
-            <form.Subscribe selector={(s) => s.canSubmit}>
-              {(canSubmit) => (
-                <Button
-                  className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700"
-                  onClick={() => void form.handleSubmit()}
-                  disabled={!canSubmit || lookupsLoading}
+                  onValueChange={(v) => field.handleChange(v ?? "")}
+                  disabled={lookupsLoading}
+                  items={reasonItems}
                 >
-                  {isSubmitting ? "Updating…" : "Update"}
-                </Button>
-              )}
-            </form.Subscribe>
-          </div>
-        </div>
-      )}
-    </form.Subscribe>
+                  <SelectTrigger id={field.name} aria-invalid={isInvalid} className="w-full">
+                    {lookupsLoading ? (
+                      <span className="text-muted-foreground">Loading…</span>
+                    ) : (
+                      <SelectValue placeholder="Select reason" />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reasons.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        </form.Field>
+
+        {/* Action Required */}
+        <form.Field name="action_id">
+          {(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            return (
+              <Field data-invalid={isInvalid}>
+                <FieldLabel htmlFor={field.name}>Action Required</FieldLabel>
+                <Select
+                  name={field.name}
+                  value={field.state.value}
+                  onValueChange={(v) => field.handleChange(v ?? "")}
+                  disabled={lookupsLoading}
+                  items={actionItems}
+                >
+                  <SelectTrigger id={field.name} aria-invalid={isInvalid} className="w-full">
+                    {lookupsLoading ? (
+                      <span className="text-muted-foreground">Loading…</span>
+                    ) : (
+                      <SelectValue placeholder="Select action" />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {actions.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            );
+          }}
+        </form.Field>
+      </div>
+
+      {/* Comment */}
+      <form.Field name="comment">
+        {(field) => {
+          const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+          return (
+            <Field data-invalid={isInvalid}>
+              <FieldLabel htmlFor={field.name}>Comments</FieldLabel>
+              <Textarea
+                id={field.name}
+                name={field.name}
+                rows={6}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                aria-invalid={isInvalid}
+              />
+              {isInvalid && <FieldError errors={field.state.meta.errors} />}
+            </Field>
+          );
+        }}
+      </form.Field>
+
+      {/* Status */}
+      {updateMutation.isError ? (
+        <p className="text-sm text-red-600">Failed to update alert. Please try again.</p>
+      ) : null}
+      {updateMutation.isSuccess ? (
+        <p className="text-sm text-emerald-700">Alert updated successfully.</p>
+      ) : null}
+
+      {/* Submit */}
+      <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
+        {([canSubmit, isSubmitting]) => (
+          <Button
+            type="submit"
+            className="rounded bg-blue-600 px-10 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-700"
+            disabled={!canSubmit || lookupsLoading}
+          >
+            {isSubmitting ? "Updating…" : "Update"}
+          </Button>
+        )}
+      </form.Subscribe>
+    </form>
   );
 }
 
